@@ -59,3 +59,13 @@ enum FormType {
   CONTACT
   BOOKING
 }
+
+model DigestOpen {
+  id        String   @id @default(cuid())
+  email     String
+  digestId  String
+  openedAt  DateTime @default(now())
+
+  @@index([email])
+  @@index([digestId])
+}
