@@ -69,3 +69,14 @@ model DigestOpen {
   @@index([email])
   @@index([digestId])
 }
+
+model DigestClick {
+  id        String   @id @default(cuid())
+  email     String
+  digestId  String
+  url       String
+  clickedAt DateTime @default(now())
+
+  @@index([email])
+  @@index([digestId])
+}
