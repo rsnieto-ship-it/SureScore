@@ -29,5 +29,6 @@ export async function GET(request: NextRequest) {
     // Contact may not exist — still redirect so the user sees confirmation
   }
 
-  return NextResponse.redirect(new URL("/unsubscribe/confirmed", request.url));
+  const siteUrl = process.env.SITE_URL || "https://surescore.com";
+  return NextResponse.redirect(`${siteUrl}/unsubscribe/confirmed`);
 }
