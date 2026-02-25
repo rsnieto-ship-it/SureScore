@@ -1,0 +1,61 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Contact {
+  id            String        @id @default(cuid())
+  email         String        @unique
+  firstName     String?
+  lastName      String?
+  phone         String?
+  districtName  String?
+  districtType  String?
+  title         String?
+  zip           String?
+  status        ContactStatus @default(SUBSCRIBED)
+  source        String?       @default("import")
+  mailchimpLeid String?       @unique
+  tags          ContactTag[]
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+}
+
+enum ContactStatus {
+  SUBSCRIBED
+  UNSUBSCRIBED
+  CLEANED
+}
+
+model Tag {
+  id       String       @id @default(cuid())
+  name     String       @unique
+  contacts ContactTag[]
+}
+
+model ContactTag {
+  contactId String
+  tagId     String
+  contact   Contact @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  tag       Tag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([contactId, tagId])
+}
+
+model FormSubmission {
+  id        String   @id @default(cuid())
+  formType  FormType
+  data      Json
+  email     String
+  notified  Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+enum FormType {
+  CONTACT
+  BOOKING
+}

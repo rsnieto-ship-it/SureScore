@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, type FormEvent } from "react";
 import Link from "next/link";
 import { Mail, Phone, MapPin, Facebook, Linkedin, Twitter } from "lucide-react";
 import { Container } from "@/components/ui";
@@ -26,6 +27,27 @@ const footerLinks = {
 };
 
 export function Footer() {
+  const [email, setEmail] = useState("");
+  const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+
+  const handleSubscribe = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!email) return;
+    setStatus("loading");
+    try {
+      const res = await fetch("/api/subscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      if (!res.ok) throw new Error();
+      setStatus("success");
+      setEmail("");
+    } catch {
+      setStatus("error");
+    }
+  };
+
   return (
     <footer className="bg-gray-900 text-white">
       <Container>
@@ -163,19 +185,34 @@ export function Footer() {
                   Subscribe to our newsletter for district resources and CCMR insights.
                 </p>
               </div>
-              <form className="flex gap-2 max-w-md w-full md:w-auto">
-                <input
-                  type="email"
-                  placeholder="Enter your email"
-                  className="flex-1 px-4 py-3 rounded-lg bg-gray-800 border border-gray-700 text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-[var(--primary-500)] focus:border-transparent"
-                />
-                <button
-                  type="submit"
-                  className="px-6 py-3 bg-[var(--primary-500)] text-white font-semibold rounded-lg hover:bg-[var(--primary-600)] transition-colors"
-                >
-                  Subscribe
-                </button>
-              </form>
+              <div className="max-w-md w-full md:w-auto">
+                {status === "success" ? (
+                  <p className="text-green-400 py-3">You&apos;re subscribed!</p>
+                ) : (
+                  <form onSubmit={handleSubscribe} className="flex gap-2">
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="Enter your email"
+                      required
+                      className="flex-1 px-4 py-3 rounded-lg bg-gray-800 border border-gray-700 text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-[var(--primary-500)] focus:border-transparent"
+                    />
+                    <button
+                      type="submit"
+                      disabled={status === "loading"}
+                      className="px-6 py-3 bg-[var(--primary-500)] text-white font-semibold rounded-lg hover:bg-[var(--primary-600)] transition-colors disabled:opacity-50"
+                    >
+                      {status === "loading" ? "..." : "Subscribe"}
+                    </button>
+                  </form>
+                )}
+                {status === "error" && (
+                  <p className="text-red-400 text-sm mt-2">
+                    Something went wrong. Please try again.
+                  </p>
+                )}
+              </div>
             </div>
           </div>
         </div>

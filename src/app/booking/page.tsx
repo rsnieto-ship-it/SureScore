@@ -5,22 +5,9 @@ import { motion } from "framer-motion";
 import { Calendar, Clock, User, CheckCircle, ArrowRight } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import { Header, Footer } from "@/components/layout";
 import { Container, Card, CardContent, Button } from "@/components/ui";
-
-const bookingSchema = z.object({
-  studentName: z.string().min(2, "Student name is required"),
-  parentName: z.string().min(2, "Parent/Guardian name is required"),
-  email: z.string().email("Please enter a valid email"),
-  phone: z.string().min(10, "Please enter a valid phone number"),
-  program: z.string().min(1, "Please select a program"),
-  grade: z.string().min(1, "Please select a grade level"),
-  preferredTime: z.string().min(1, "Please select a preferred time"),
-  notes: z.string().optional(),
-});
-
-type BookingFormData = z.infer<typeof bookingSchema>;
+import { bookingSchema, type BookingFormData } from "@/lib/schemas";
 
 export default function BookingPage() {
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -32,10 +19,26 @@ export default function BookingPage() {
     resolver: zodResolver(bookingSchema),
   });
 
+  const [submitError, setSubmitError] = useState<string | null>(null);
+
   const onSubmit = async (data: BookingFormData) => {
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    console.log(data);
-    setIsSubmitted(true);
+    setSubmitError(null);
+    try {
+      const res = await fetch("/api/booking", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || "Something went wrong");
+      }
+      setIsSubmitted(true);
+    } catch (err) {
+      setSubmitError(
+        err instanceof Error ? err.message : "Something went wrong. Please try again."
+      );
+    }
   };
 
   return (
@@ -313,6 +316,12 @@ export default function BookingPage() {
                               placeholder="Tell us about your goals, current scores, or any questions..."
                             />
                           </div>
+
+                          {submitError && (
+                            <p className="text-sm text-red-500 text-center">
+                              {submitError}
+                            </p>
+                          )}
 
                           <Button
                             type="submit"

@@ -5,22 +5,10 @@ import { motion } from "framer-motion";
 import { Mail, Phone, MapPin, Send, CheckCircle, Building2, Calendar } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import Link from "next/link";
 import { Header, Footer } from "@/components/layout";
 import { Container, Card, CardContent, Button } from "@/components/ui";
-
-const contactSchema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters"),
-  email: z.string().email("Please enter a valid email"),
-  phone: z.string().optional(),
-  district: z.string().min(2, "Please enter your district name"),
-  role: z.string().min(1, "Please select your role"),
-  interest: z.string().min(1, "Please select your primary interest"),
-  message: z.string().min(10, "Message must be at least 10 characters"),
-});
-
-type ContactFormData = z.infer<typeof contactSchema>;
+import { contactSchema, type ContactFormData } from "@/lib/schemas";
 
 export default function ContactPage() {
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -32,11 +20,26 @@ export default function ContactPage() {
     resolver: zodResolver(contactSchema),
   });
 
+  const [submitError, setSubmitError] = useState<string | null>(null);
+
   const onSubmit = async (data: ContactFormData) => {
-    // Simulate form submission
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    console.log(data);
-    setIsSubmitted(true);
+    setSubmitError(null);
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || "Something went wrong");
+      }
+      setIsSubmitted(true);
+    } catch (err) {
+      setSubmitError(
+        err instanceof Error ? err.message : "Something went wrong. Please try again."
+      );
+    }
   };
 
   return (
@@ -316,6 +319,12 @@ export default function ContactPage() {
                               </p>
                             )}
                           </div>
+
+                          {submitError && (
+                            <p className="text-sm text-red-500 text-center">
+                              {submitError}
+                            </p>
+                          )}
 
                           <Button
                             type="submit"
