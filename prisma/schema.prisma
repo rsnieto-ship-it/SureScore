@@ -80,3 +80,63 @@ model DigestClick {
   @@index([email])
   @@index([digestId])
 }
+
+// ── Newsletter Digest Workflow ──────────────────────────────────────
+
+enum DigestStatus {
+  PENDING_REVIEW
+  APPROVED
+  SENDING_BATCH_1
+  SENT_BATCH_1
+  SENDING_BATCH_2
+  SENT_COMPLETE
+}
+
+model Digest {
+  id          String       @id @default(cuid())
+  weekOf      DateTime
+  status      DigestStatus @default(PENDING_REVIEW)
+  subject     String?
+  htmlContent String?      @db.Text
+  approvedAt  DateTime?
+  approvedBy  String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  candidates DigestCandidate[]
+  sends      DigestSend[]
+}
+
+model DigestCandidate {
+  id        String   @id @default(cuid())
+  digestId  String
+  position  Int
+  title     String
+  summary   String   @db.Text
+  source    String
+  category  String
+  link      String
+  published DateTime
+  isTexas   Boolean  @default(false)
+  selected  Boolean  @default(false)
+  take      String?  @db.Text
+
+  digest Digest @relation(fields: [digestId], references: [id], onDelete: Cascade)
+
+  @@unique([digestId, position])
+  @@index([digestId])
+}
+
+model DigestSend {
+  id        String   @id @default(cuid())
+  digestId  String
+  email     String
+  sentAt    DateTime @default(now())
+  batch     Int
+
+  digest Digest @relation(fields: [digestId], references: [id], onDelete: Cascade)
+
+  @@unique([digestId, email])
+  @@index([digestId])
+  @@index([email])
+}
