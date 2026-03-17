@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ArrowRight, TrendingUp, Users, ShieldCheck } from "lucide-react";
-import { Button, Container } from "@/components/ui";
+import { ArrowRight, Brain, Database, TrendingUp, Award } from "lucide-react";
+import { Container } from "@/components/ui";
 
 export function Hero() {
   return (
@@ -39,158 +39,146 @@ export function Hero() {
       />
 
       <Container className="relative z-10">
-        <div className="grid lg:grid-cols-2 gap-12 items-center">
-          {/* Content */}
-          <div>
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-            >
-              <span className="inline-block px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full text-white/90 text-sm font-medium mb-6">
-                Trusted by Texas Districts Since 1995
-              </span>
-            </motion.div>
-
-            <motion.h1
-              className="text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold font-[family-name:var(--font-montserrat)] text-white leading-tight mb-6"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.1 }}
-            >
-              Boost Your{" "}
-              <span className="text-[var(--secondary-300)]">CCMR</span>{" "}
-              Rating
-            </motion.h1>
-
-            <motion.p
-              className="text-lg md:text-xl text-white/80 mb-8 max-w-xl"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-            >
-              Texas&apos; trusted TSIA2, SAT, and ACT partner. We guarantee improved
-              passing rates through proven test prep, teacher training, and
-              data-driven solutions built specifically for Texas school districts.
-            </motion.p>
-
-            <motion.div
-              className="flex flex-wrap gap-4"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.3 }}
-            >
-              <Link href="/services">
-                <Button size="lg" className="bg-white text-[var(--primary-600)] hover:bg-gray-100">
-                  Explore Solutions
-                  <ArrowRight className="ml-2 w-5 h-5" />
-                </Button>
-              </Link>
-              <Link href="/contact">
-                <Button
-                  size="lg"
-                  variant="outline"
-                  className="border-white text-white hover:bg-white hover:text-[var(--primary-600)]"
-                >
-                  Request a Demo
-                </Button>
-              </Link>
-            </motion.div>
-
-            {/* Stats Preview */}
-            <motion.div
-              className="flex gap-8 mt-12 pt-8 border-t border-white/20"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.4 }}
-            >
-              <div>
-                <div className="text-3xl font-bold font-[family-name:var(--font-space-grotesk)] text-white">
-                  70+
-                </div>
-                <div className="text-white/70 text-sm">Partner Districts</div>
-              </div>
-              <div>
-                <div className="text-3xl font-bold font-[family-name:var(--font-space-grotesk)] text-white">
-                  179-pt
-                </div>
-                <div className="text-white/70 text-sm">Avg. SAT Increase</div>
-              </div>
-              <div>
-                <div className="text-3xl font-bold font-[family-name:var(--font-space-grotesk)] text-white">
-                  3.1-pt
-                </div>
-                <div className="text-white/70 text-sm">Avg. ACT Increase</div>
-              </div>
-              <div>
-                <div className="text-3xl font-bold font-[family-name:var(--font-space-grotesk)] text-[var(--secondary-300)]">
-                  TSIA2
-                </div>
-                <div className="text-white/70 text-sm">Guaranteed Results</div>
-              </div>
-            </motion.div>
-          </div>
-
-          {/* Visual Element */}
+        {/* Umbrella Narrative */}
+        <div className="text-center max-w-4xl mx-auto mb-16">
           <motion.div
-            className="hidden lg:block relative"
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.7, delay: 0.2 }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
           >
-            <div className="relative w-full aspect-square max-w-lg mx-auto">
-              {/* Floating cards */}
-              <motion.div
-                className="absolute top-0 right-0 bg-white rounded-2xl shadow-2xl p-6 max-w-[200px]"
-                animate={{ y: [0, -10, 0] }}
-                transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-              >
-                <div className="flex items-center gap-2 mb-2">
-                  <TrendingUp className="w-8 h-8 text-[var(--secondary-500)]" />
-                </div>
-                <div className="text-3xl font-bold text-[var(--primary-500)] font-[family-name:var(--font-space-grotesk)]">
-                  179-pt
-                </div>
-                <div className="text-gray-600 text-sm">Avg. SAT Increase</div>
-              </motion.div>
+            <span className="inline-block px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full text-white/90 text-sm font-medium mb-6">
+              Trusted by Texas Districts Since 1995
+            </span>
+          </motion.div>
 
-              <motion.div
-                className="absolute bottom-1/4 left-0 bg-white rounded-2xl shadow-2xl p-6 max-w-[220px]"
-                animate={{ y: [0, 10, 0] }}
-                transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-              >
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="w-10 h-10 bg-[var(--secondary-500)] rounded-full flex items-center justify-center">
-                    <Users className="w-5 h-5 text-white" />
-                  </div>
-                  <span className="font-semibold text-gray-800">Teacher Training</span>
+          <motion.h1
+            className="text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold font-[family-name:var(--font-montserrat)] text-white leading-tight mb-6"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+          >
+            Where{" "}
+            <span className="text-[var(--secondary-300)]">Teacher Excellence</span>
+            {" "}Meets{" "}
+            <span className="text-[var(--secondary-300)]">Student Achievement</span>
+          </motion.h1>
+
+          <motion.p
+            className="text-lg md:text-xl text-white/80 mb-10 max-w-2xl mx-auto"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+          >
+            We empower Texas districts to bridge the gap between teacher
+            excellence and student achievement &mdash; the two sides of district
+            success.
+          </motion.p>
+        </div>
+
+        {/* Two Doors */}
+        <motion.div
+          className="grid md:grid-cols-2 gap-6 max-w-5xl mx-auto"
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.3 }}
+        >
+          {/* Door 1: Student Achievement */}
+          <Link href="/services/ai-tutor" className="group block">
+            <div className="relative bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-8 md:p-10 hover:bg-white/15 hover:border-white/40 transition-all duration-300 h-full">
+              <div className="w-14 h-14 bg-[var(--secondary-500)] rounded-2xl flex items-center justify-center mb-6">
+                <Brain className="w-7 h-7 text-white" />
+              </div>
+              <h2 className="text-2xl md:text-3xl font-bold font-[family-name:var(--font-montserrat)] text-white mb-3">
+                Boost Student Scores
+              </h2>
+              <p className="text-white/70 mb-6 leading-relaxed">
+                AI-powered TSIA2, SAT, and ACT prep that personalizes to every
+                student&apos;s gaps. Mastery-based learning through Socratic
+                dialogue &mdash; available 24/7.
+              </p>
+              <div className="space-y-3 mb-8">
+                <div className="flex items-center gap-2 text-white/60 text-sm">
+                  <TrendingUp className="w-4 h-4 text-[var(--secondary-300)]" />
+                  <span>179-pt avg. SAT increase</span>
                 </div>
-                <div className="text-gray-500 text-sm">Empower your educators with proven strategies</div>
-              </motion.div>
-
-              <motion.div
-                className="absolute top-1/3 right-1/4 bg-[var(--secondary-500)] rounded-2xl shadow-2xl p-4 text-white"
-                animate={{ y: [0, -15, 0] }}
-                transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-              >
-                <ShieldCheck className="w-6 h-6 mb-1" />
-                <div className="font-bold">TSIA2 Ready</div>
-                <div className="text-white/80 text-sm">Guaranteed Pass Rates</div>
-              </motion.div>
-
-              {/* Center circle */}
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-48 h-48 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
-                  <div className="w-36 h-36 bg-white rounded-full flex items-center justify-center shadow-lg">
-                    <span className="text-3xl font-bold font-[family-name:var(--font-montserrat)] text-[var(--primary-600)]">
-                      SS
-                    </span>
-                  </div>
+                <div className="flex items-center gap-2 text-white/60 text-sm">
+                  <TrendingUp className="w-4 h-4 text-[var(--secondary-300)]" />
+                  <span>3.1-pt avg. ACT increase</span>
+                </div>
+                <div className="flex items-center gap-2 text-white/60 text-sm">
+                  <TrendingUp className="w-4 h-4 text-[var(--secondary-300)]" />
+                  <span>Guaranteed TSIA2 results</span>
                 </div>
               </div>
+              <span className="inline-flex items-center text-[var(--secondary-300)] font-semibold group-hover:gap-3 gap-2 transition-all">
+                Explore AI Tutor
+                <ArrowRight className="w-5 h-5" />
+              </span>
             </div>
-          </motion.div>
-        </div>
+          </Link>
+
+          {/* Door 2: Teacher Excellence */}
+          <Link href="/services/tia-platform" className="group block">
+            <div className="relative bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-8 md:p-10 hover:bg-white/15 hover:border-white/40 transition-all duration-300 h-full">
+              <div className="w-14 h-14 bg-[var(--secondary-500)] rounded-2xl flex items-center justify-center mb-6">
+                <Database className="w-7 h-7 text-white" />
+              </div>
+              <h2 className="text-2xl md:text-3xl font-bold font-[family-name:var(--font-montserrat)] text-white mb-3">
+                Retain Top Talent
+              </h2>
+              <p className="text-white/70 mb-6 leading-relaxed">
+                Streamline your Teacher Incentive Allotment workflows &mdash;
+                automated roster matching, multi-vendor integration, and
+                submission-ready TEA files.
+              </p>
+              <div className="space-y-3 mb-8">
+                <div className="flex items-center gap-2 text-white/60 text-sm">
+                  <Award className="w-4 h-4 text-[var(--secondary-300)]" />
+                  <span>12 assessment vendor integrations</span>
+                </div>
+                <div className="flex items-center gap-2 text-white/60 text-sm">
+                  <Award className="w-4 h-4 text-[var(--secondary-300)]" />
+                  <span>TEA-aligned growth calculations</span>
+                </div>
+                <div className="flex items-center gap-2 text-white/60 text-sm">
+                  <Award className="w-4 h-4 text-[var(--secondary-300)]" />
+                  <span>One-click 30-column TEA output</span>
+                </div>
+              </div>
+              <span className="inline-flex items-center text-[var(--secondary-300)] font-semibold group-hover:gap-3 gap-2 transition-all">
+                Explore TIA Platform
+                <ArrowRight className="w-5 h-5" />
+              </span>
+            </div>
+          </Link>
+        </motion.div>
+
+        {/* Stats bar */}
+        <motion.div
+          className="flex flex-wrap justify-center gap-8 md:gap-12 mt-16 pt-8 border-t border-white/20 max-w-3xl mx-auto"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.5 }}
+        >
+          <div className="text-center">
+            <div className="text-3xl font-bold font-[family-name:var(--font-space-grotesk)] text-white">
+              70+
+            </div>
+            <div className="text-white/70 text-sm">Partner Districts</div>
+          </div>
+          <div className="text-center">
+            <div className="text-3xl font-bold font-[family-name:var(--font-space-grotesk)] text-white">
+              30+
+            </div>
+            <div className="text-white/70 text-sm">Years in Texas Ed</div>
+          </div>
+          <div className="text-center">
+            <div className="text-3xl font-bold font-[family-name:var(--font-space-grotesk)] text-[var(--secondary-300)]">
+              2
+            </div>
+            <div className="text-white/70 text-sm">Platforms, One Mission</div>
+          </div>
+        </motion.div>
       </Container>
 
       {/* Scroll indicator */}

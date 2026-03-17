@@ -21,17 +21,26 @@ const spaceGrotesk = Space_Grotesk({
 });
 
 export const metadata: Metadata = {
-  title: "SureScore College Prep | Test Prep Services Since 1995",
+  title: "SureScore | Teacher Excellence & Student Achievement for Texas Districts",
   description:
-    "Foster academic excellence, boost test scores, and exceed district goals with SureScore's proven SAT, ACT, PSAT, and TSIA2 test prep programs.",
+    "SureScore empowers Texas districts to bridge the gap between teacher excellence and student achievement. AI-powered TSIA2 test prep and Teacher Incentive Allotment (TIA) data management — two platforms, one mission.",
   keywords: [
+    "SureScore",
+    "Teacher Incentive Allotment",
+    "TIA",
+    "TIA software",
+    "TSIA2 prep",
+    "AI tutor",
     "SAT prep",
     "ACT prep",
     "PSAT prep",
-    "TSIA2 prep",
     "college prep",
-    "test prep",
-    "Texas",
+    "test prep Texas",
+    "CCMR",
+    "Texas school districts",
+    "college readiness",
+    "teacher retention",
+    "TIA data platform",
   ],
 };
 

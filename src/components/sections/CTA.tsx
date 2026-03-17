@@ -24,12 +24,12 @@ export function CTA() {
             transition={{ duration: 0.5 }}
           >
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold font-[family-name:var(--font-montserrat)] text-white mb-6">
-              Ready to Transform Your District&apos;s CCMR Outcomes?
+              We Don&apos;t Just Help Students Pass the Test
             </h2>
             <p className="text-xl text-white/80 mb-10 max-w-2xl mx-auto">
-              Partner with SureScore to implement a comprehensive college readiness
-              solution tailored to your district&apos;s needs. Schedule a demo to see
-              how we can help.
+              We help you identify, reward, and keep the teachers who made it
+              possible. From AI-powered test prep to TIA data management &mdash;
+              two platforms, one mission: district success.
             </p>
           </motion.div>
 

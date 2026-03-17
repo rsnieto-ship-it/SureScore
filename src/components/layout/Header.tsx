@@ -13,6 +13,7 @@ const navigation = [
     label: "Solutions",
     href: "/services",
     children: [
+      { label: "AI Tutor", href: "/services/ai-tutor" },
       { label: "Online Solutions", href: "/services/online-solutions" },
       { label: "Teacher Training", href: "/services/teacher-training" },
       { label: "Customizable Curriculum", href: "/services/customizable-curriculum" },
@@ -21,8 +22,10 @@ const navigation = [
       { label: "Strategy of the Day", href: "/services/strategy-of-the-day" },
     ],
   },
+  { label: "TIA Platform", href: "/services/tia-platform" },
   { label: "Results", href: "/results" },
   { label: "Resources", href: "/resources" },
+  { label: "Newsletter", href: "/newsletter" },
   { label: "About", href: "/about" },
   { label: "Contact", href: "/contact" },
 ];
@@ -92,17 +95,13 @@ export function Header() {
 
             {/* CTA Buttons */}
             <div className="hidden lg:flex items-center gap-6">
-              <Link href="/contact">
-                <Button size="sm">Request Demo</Button>
+              <Link href="/contact" className="inline-flex items-center justify-center font-semibold rounded-lg transition-all duration-200 bg-[var(--primary-500)] text-white hover:bg-[var(--primary-600)] text-sm px-4 py-2">
+                Request Demo
               </Link>
-              <button onClick={() => setLoginOpen(true)}>
-                <Button variant="outline" size="sm" asChild>
-                  <span>
-                    <LogIn className="w-4 h-4 mr-1.5" />
-                    Log In
-                  </span>
-                </Button>
-              </button>
+              <Button variant="outline" size="sm" onClick={() => setLoginOpen(true)}>
+                <LogIn className="w-4 h-4 mr-1.5" />
+                Log In
+              </Button>
             </div>
 
             {/* Mobile Menu Button */}
@@ -167,21 +166,20 @@ export function Header() {
                   </div>
                 ))}
                 <div className="pt-4 space-y-2">
-                  <Link href="/contact" className="block">
-                    <Button className="w-full">Request Demo</Button>
+                  <Link href="/contact" className="block w-full inline-flex items-center justify-center font-semibold rounded-lg transition-all duration-200 bg-[var(--primary-500)] text-white hover:bg-[var(--primary-600)] px-6 py-3 text-center">
+                    Request Demo
                   </Link>
-                  <button
+                  <Button
+                    variant="outline"
                     className="w-full"
                     onClick={() => {
                       setMobileMenuOpen(false);
                       setLoginOpen(true);
                     }}
                   >
-                    <Button variant="outline" className="w-full">
-                      <LogIn className="w-4 h-4 mr-1.5" />
-                      Student & Teacher Log In
-                    </Button>
-                  </button>
+                    <LogIn className="w-4 h-4 mr-1.5" />
+                    Student & Teacher Log In
+                  </Button>
                 </div>
               </div>
             </Container>

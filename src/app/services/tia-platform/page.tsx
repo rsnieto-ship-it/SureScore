@@ -43,7 +43,7 @@ export default function TIAPlatformPage() {
                       Request a Demo
                     </Button>
                   </Link>
-                  <a href="https://surescore.edis.io/Account/testlogon" target="_blank" rel="noopener noreferrer">
+                  <a href="https://tia.surescore.com" target="_blank" rel="noopener noreferrer">
                     <Button size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-[var(--primary-600)]">
                       Login
                     </Button>
@@ -60,7 +60,7 @@ export default function TIAPlatformPage() {
                   <div className="text-center">
                     <Database className="w-16 h-16 mx-auto mb-4 text-[var(--secondary-300)]" />
                     <div className="text-5xl font-bold font-[family-name:var(--font-space-grotesk)] mb-2">
-                      7
+                      12
                     </div>
                     <div className="text-white/80">Assessment Vendors</div>
                   </div>

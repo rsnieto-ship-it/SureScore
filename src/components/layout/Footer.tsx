@@ -7,6 +7,7 @@ import { Container } from "@/components/ui";
 
 const footerLinks = {
   solutions: [
+    { label: "AI Tutor", href: "/services/ai-tutor" },
     { label: "Online Solutions", href: "/services/online-solutions" },
     { label: "Teacher Training", href: "/services/teacher-training" },
     { label: "Customizable Curriculum", href: "/services/customizable-curriculum" },
