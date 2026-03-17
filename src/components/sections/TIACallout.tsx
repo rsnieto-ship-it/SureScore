@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ArrowRight, Brain, Database, ArrowDownUp } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { Container, Card, CardContent } from "@/components/ui";
 
 export function TIACallout() {
@@ -15,9 +15,6 @@ export function TIACallout() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
         >
-          <span className="inline-block px-4 py-1.5 bg-[var(--primary-100)] text-[var(--primary-600)] rounded-full text-sm font-semibold mb-4">
-            The Full Picture
-          </span>
           <h2 className="text-3xl md:text-4xl font-bold font-[family-name:var(--font-montserrat)] text-gray-900 mb-6">
             Two Platforms.{" "}
             <span className="text-[var(--primary-500)]">One Mission.</span>
@@ -29,7 +26,7 @@ export function TIACallout() {
           </p>
         </motion.div>
 
-        <div className="grid lg:grid-cols-3 gap-8 items-center max-w-5xl mx-auto">
+        <div className="grid md:grid-cols-3 gap-8 items-center max-w-5xl mx-auto">
           {/* Student Achievement */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
@@ -39,18 +36,15 @@ export function TIACallout() {
             <Link href="/services/ai-tutor" className="block group">
               <Card className="h-full" hover="lift">
                 <CardContent className="p-8 text-center">
-                  <div className="w-16 h-16 bg-[var(--secondary-100)] text-[var(--secondary-500)] rounded-2xl flex items-center justify-center mx-auto mb-4">
-                    <Brain className="w-8 h-8" />
-                  </div>
                   <h3 className="text-xl font-bold text-gray-900 mb-2">
                     Student Achievement
                   </h3>
                   <p className="text-gray-600 text-sm mb-4">
-                    AI Tutor delivers the content to drive the scores. Personalized
-                    TSIA2 prep that meets every student where they are.
+                    AI Tutors deliver the content to drive the scores. Personalized
+                    TSIA2, SAT, and ACT prep that meets every student where they are.
                   </p>
                   <span className="inline-flex items-center text-[var(--primary-500)] font-semibold text-sm group-hover:gap-2 gap-1 transition-all">
-                    AI Tutor <ArrowRight className="w-4 h-4" />
+                    AI Tutors <ArrowRight className="w-4 h-4" />
                   </span>
                 </CardContent>
               </Card>
@@ -65,14 +59,11 @@ export function TIACallout() {
             viewport={{ once: true }}
             transition={{ delay: 0.15 }}
           >
-            <div className="w-14 h-14 bg-[var(--primary-500)] rounded-full flex items-center justify-center">
-              <ArrowDownUp className="w-6 h-6 text-white" />
-            </div>
             <div className="text-center">
               <p className="font-bold text-gray-900 text-sm">
                 Test prep success justifies TIA designations.
               </p>
-              <p className="font-bold text-gray-900 text-sm mt-1">
+              <p className="font-bold text-gray-900 text-sm mt-2">
                 TIA data reveals where prep is needed most.
               </p>
             </div>
@@ -87,9 +78,6 @@ export function TIACallout() {
             <Link href="/services/tia-platform" className="block group">
               <Card className="h-full" hover="lift">
                 <CardContent className="p-8 text-center">
-                  <div className="w-16 h-16 bg-[var(--primary-100)] text-[var(--primary-500)] rounded-2xl flex items-center justify-center mx-auto mb-4">
-                    <Database className="w-8 h-8" />
-                  </div>
                   <h3 className="text-xl font-bold text-gray-900 mb-2">
                     Teacher Excellence
                   </h3>
