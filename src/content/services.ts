@@ -2,70 +2,18 @@ import { Service } from "@/types";
 
 export const services: Service[] = [
   {
-    id: "online-solutions",
-    title: "Online Solutions",
-    description:
-      "Comprehensive digital platform providing diagnostic assessments, personalized learning paths, and real-time progress tracking for district-wide implementation.",
-    href: "/services/online-solutions",
-    features: [
-      "District-wide diagnostic testing",
-      "Real-time student progress dashboards",
-      "TEKS-aligned digital curriculum",
-      "Administrator analytics portal",
-    ],
-  },
-  {
-    id: "teacher-training",
-    title: "Teacher Training",
-    description:
-      "Professional development programs that equip your educators with proven test prep strategies and instructional techniques to maximize student outcomes.",
-    href: "/services/teacher-training",
-    features: [
-      "On-site professional development",
-      "Train-the-trainer certification",
-      "Ongoing coaching and support",
-      "Best practices workshops",
-    ],
-  },
-  {
-    id: "customizable-curriculum",
-    title: "Customizable Curriculum",
-    description:
-      "Flexible, TEKS-aligned curriculum solutions that adapt to your district's specific needs, timelines, and student population demographics.",
-    href: "/services/customizable-curriculum",
-    features: [
-      "TEKS and CCMR aligned content",
-      "Modular implementation options",
-      "Bilingual resources available",
-      "Differentiated instruction materials",
-    ],
-  },
-  {
-    id: "district-partnership",
-    title: "District Partnership",
-    description:
-      "End-to-end partnership model combining online solutions, teacher training, and curriculum to maximize your district's CCMR outcomes.",
-    href: "/services/district-partnership",
-    features: [
-      "Dedicated district success manager",
-      "Custom implementation planning",
-      "Quarterly performance reviews",
-      "ROI and CCMR impact reporting",
-    ],
-  },
-  {
     id: "ai-tutor",
     title: "AI Tutors",
     description:
-      "The personal tutor every student deserves. AI-powered, Socratic mastery-based learning for TSIA2, SAT, and ACT — with more subjects coming soon. Personalized to each student's gaps, available 24/7, with zero additional teacher burden.",
+      "The personal tutor every student deserves. AI-powered, Socratic mastery-based learning for TSIA2, SAT, and ACT — with more subjects coming soon. Personalized to each student's gaps, available 24/7.",
     href: "/services/ai-tutor",
     features: [
       "Personalized learning paths",
       "Socratic mastery method",
-      "TSIA2 Math & ELAR aligned",
+      "TSIA2, SAT & ACT aligned",
       "Available 24/7",
       "Adaptive difficulty",
-      "Teacher progress dashboards",
+      "Zero teacher burden",
     ],
   },
   {
@@ -84,10 +32,25 @@ export const services: Service[] = [
     ],
   },
   {
+    id: "district-partnership",
+    title: "District Partnership",
+    description:
+      "End-to-end partnership combining online solutions, teacher training, and customizable curriculum to maximize your district's CCMR outcomes.",
+    href: "/services/district-partnership",
+    features: [
+      "Dedicated district success manager",
+      "On-site teacher training & certification",
+      "TEKS-aligned customizable curriculum",
+      "Quarterly performance reviews",
+      "ROI and CCMR impact reporting",
+      "Bilingual resources available",
+    ],
+  },
+  {
     id: "strategy-of-the-day",
     title: "Strategy of the Day",
     description:
-      "A teacher-led, gamified daily test prep experience delivering focused TSIA2 skill-building to entire grade levels in under ten minutes. Designed to keep teachers at the center of instruction while driving measurable college readiness gains.",
+      "Teacher-led, gamified daily TSIA2 skill-building for entire grade levels in under ten minutes. Low-friction, high-impact.",
     href: "/services/strategy-of-the-day",
     features: [
       "Teacher-led gamified instruction",

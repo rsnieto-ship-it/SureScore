@@ -7,12 +7,9 @@ import { Container } from "@/components/ui";
 
 const footerLinks = {
   solutions: [
-    { label: "AI Tutor", href: "/services/ai-tutor" },
-    { label: "Online Solutions", href: "/services/online-solutions" },
-    { label: "Teacher Training", href: "/services/teacher-training" },
-    { label: "Customizable Curriculum", href: "/services/customizable-curriculum" },
-    { label: "District Partnership", href: "/services/district-partnership" },
+    { label: "AI Tutors", href: "/services/ai-tutor" },
     { label: "TIA Data Platform", href: "/services/tia-platform" },
+    { label: "District Partnership", href: "/services/district-partnership" },
     { label: "Strategy of the Day", href: "/services/strategy-of-the-day" },
   ],
   company: [
