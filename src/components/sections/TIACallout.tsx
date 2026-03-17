@@ -20,9 +20,9 @@ export function TIACallout() {
             <span className="text-[var(--primary-500)]">One Mission.</span>
           </h2>
           <p className="text-lg text-gray-600">
-            Most districts have great teachers but poor student data &mdash; or
-            great student data but no way to reward the teachers who moved the
-            needle. SureScore solves both.
+            Districts work hard to raise student outcomes and retain great
+            teachers &mdash; but managing both without the right tools is
+            overwhelming. SureScore makes it simple.
           </p>
         </motion.div>
 
