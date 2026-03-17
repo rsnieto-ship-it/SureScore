@@ -26,28 +26,3 @@ export const testimonials: Testimonial[] = [
     rating: 5,
   },
 ];
-
-export const caseStudies = [
-  {
-    district: "Valley View ISD",
-    students: "15,000",
-    challenge: "Low CCMR ratings and inconsistent test prep across campuses",
-    solution: "District-wide implementation with teacher training and online solutions",
-    results: [
-      "18% improvement in CCMR rating",
-      "25% increase in SAT/ACT benchmark achievement",
-      "92% teacher satisfaction with training",
-    ],
-  },
-  {
-    district: "Lone Star ISD",
-    students: "8,500",
-    challenge: "Limited resources for college readiness programs",
-    solution: "Customizable curriculum with bilingual support",
-    results: [
-      "32% increase in TSIA2 college-ready students",
-      "Reduced remediation rates by 40%",
-      "Cost savings of $200K annually",
-    ],
-  },
-];

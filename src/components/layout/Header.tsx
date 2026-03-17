@@ -20,7 +20,6 @@ const navigation = [
     ],
   },
   { label: "TIA Platform", href: "/services/tia-platform" },
-  { label: "Results", href: "/results" },
   { label: "Resources", href: "/resources" },
   { label: "Newsletter", href: "/newsletter" },
   { label: "About", href: "/about" },
