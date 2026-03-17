@@ -18,7 +18,7 @@ const footerLinks = {
     { label: "Contact", href: "/contact" },
   ],
   resources: [
-    { label: "Resource Library", href: "/resources" },
+    { label: "Newsletter", href: "/newsletter" },
     { label: "District Portal", href: "https://surescore.edis.io/Account/testlogon" },
     { label: "Request Demo", href: "/contact" },
   ],

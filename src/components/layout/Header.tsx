@@ -19,7 +19,6 @@ const navigation = [
       { label: "Strategy of the Day", href: "/services/strategy-of-the-day" },
     ],
   },
-  { label: "Resources", href: "/resources" },
   { label: "Newsletter", href: "/newsletter" },
   { label: "About", href: "/about" },
   { label: "Contact", href: "/contact" },

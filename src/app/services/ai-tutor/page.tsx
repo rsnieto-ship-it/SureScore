@@ -172,7 +172,7 @@ export default function AITutorPage() {
                 The Problem
               </span>
               <h2 className="text-3xl md:text-4xl font-bold font-[family-name:var(--font-montserrat)] text-gray-900 mb-6">
-                Two Gaps Holding Students Back
+                Teachers Are Overwhelmed
               </h2>
             </motion.div>
 
@@ -185,12 +185,12 @@ export default function AITutorPage() {
                 <Card className="h-full border-l-4 border-l-red-400">
                   <CardContent className="p-8">
                     <h3 className="text-xl font-bold text-gray-900 mb-3">
-                      Boring Content
+                      Too Many Students, Not Enough Hours
                     </h3>
                     <p className="text-gray-600">
-                      Traditional test prep is dry and one-size-fits-all. Generic
-                      worksheets and repetitive drills don&apos;t inspire — they
-                      disengage students entirely.
+                      Teachers are doing everything they can, but there aren&apos;t
+                      enough hours in the day to give every student the
+                      individualized attention they need to pass TSIA2, SAT, or ACT.
                     </p>
                   </CardContent>
                 </Card>
@@ -203,12 +203,12 @@ export default function AITutorPage() {
                 <Card className="h-full border-l-4 border-l-red-400">
                   <CardContent className="p-8">
                     <h3 className="text-xl font-bold text-gray-900 mb-3">
-                      Teacher Shortage
+                      One-Size-Fits-All Doesn&apos;t Work
                     </h3>
                     <p className="text-gray-600">
-                      Advanced Math and ELAR teachers are scarce — especially in
-                      under-resourced districts. Students rarely get access to the
-                      expert instruction they need.
+                      Traditional test prep materials are generic and disengaging.
+                      Students need personalized support that meets them where they
+                      are — not another worksheet.
                     </p>
                   </CardContent>
                 </Card>
@@ -221,7 +221,7 @@ export default function AITutorPage() {
               whileInView={{ opacity: 1 }}
               viewport={{ once: true }}
             >
-              The result: Students fall behind, confidence drops, and test scores
+              The result: Teachers burn out, students disengage, and test scores
               suffer.
             </motion.p>
           </Container>
@@ -240,17 +240,18 @@ export default function AITutorPage() {
                 The Solution
               </span>
               <h2 className="text-3xl md:text-4xl font-bold font-[family-name:var(--font-montserrat)] text-gray-900 mb-6">
-                SureScore AI Tutor Solves Both —{" "}
+                Your Teachers&apos; Best{" "}
                 <span className="italic text-[var(--primary-500)]">
-                  Simultaneously
+                  Teaching Assistant
                 </span>
               </h2>
               <p className="text-lg text-gray-600">
-                A fully personalized, AI-powered learning companion built for
-                TSIA2 prep. It delivers SureScore&apos;s proven curriculum —
-                refined over a decade — and personalizes the experience for each
-                student with an intelligent tutor that guides mastery through
-                conversation, not passive drills.
+                SureScore AI Tutors lift the burden off your teachers&apos;
+                shoulders by giving every student a personalized, always-positive
+                learning companion. Built on a decade of proven curriculum, each
+                AI Tutor guides mastery through Socratic conversation — while
+                flagging issues, tracking progress, and reporting back to teachers
+                so they stay in control.
               </p>
             </motion.div>
 
@@ -422,16 +423,15 @@ export default function AITutorPage() {
               viewport={{ once: true }}
             >
               <p className="text-[var(--secondary-300)] text-lg italic mb-4">
-                Every student gets what only the most fortunate students used to
-                have:
+                Your teachers get an always-on teaching assistant. Your students get:
               </p>
               <h2 className="text-3xl md:text-4xl font-bold font-[family-name:var(--font-montserrat)] text-white mb-10">
-                A brilliant, patient tutor who never gives up on them.
+                A patient, expert tutor who never gives up on them.
               </h2>
               <div className="flex flex-wrap justify-center gap-4">
                 {[
                   "Higher Test Scores",
-                  "Deeper Understanding",
+                  "Less Teacher Burnout",
                   "Scalable for Any District",
                 ].map((item) => (
                   <span
