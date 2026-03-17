@@ -4,7 +4,7 @@ import { Header, Footer } from "@/components/layout";
 import { Container } from "@/components/ui";
 import { CTA } from "@/components/sections";
 
-export const revalidate = 3600; // Revalidate every hour
+export const dynamic = "force-dynamic";
 
 export default async function NewsletterArchivePage() {
   const digests = await prisma.digest.findMany({

@@ -4,7 +4,7 @@ import { prisma } from "@/lib/db";
 import { Header, Footer } from "@/components/layout";
 import { Container } from "@/components/ui";
 
-export const revalidate = 3600;
+export const dynamic = "force-dynamic";
 
 export default async function NewsletterDetailPage({
   params,
