@@ -55,9 +55,9 @@ export const services: Service[] = [
   },
   {
     id: "ai-tutor",
-    title: "AI Tutor",
+    title: "AI Tutors",
     description:
-      "The personal tutor every student deserves. AI-powered, Socratic mastery-based learning for TSIA2 Math and ELAR — personalized to each student's gaps, available 24/7, with zero additional teacher burden.",
+      "The personal tutor every student deserves. AI-powered, Socratic mastery-based learning for TSIA2, SAT, and ACT — with more subjects coming soon. Personalized to each student's gaps, available 24/7, with zero additional teacher burden.",
     href: "/services/ai-tutor",
     features: [
       "Personalized learning paths",
