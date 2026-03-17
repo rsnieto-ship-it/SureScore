@@ -289,10 +289,10 @@ export default function ContactPage() {
                                 className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[var(--primary-500)] focus:border-transparent transition-all"
                               >
                                 <option value="">Select your interest</option>
-                                <option value="online-solutions">Online Solutions</option>
-                                <option value="teacher-training">Teacher Training</option>
-                                <option value="curriculum">Customizable Curriculum</option>
-                                <option value="partnership">Full District Partnership</option>
+                                <option value="ai-tutors">AI Tutors (TSIA2, SAT, ACT Prep)</option>
+                                <option value="tia-platform">TIA Data Platform</option>
+                                <option value="district-partnership">District Partnership</option>
+                                <option value="strategy-of-the-day">Strategy of the Day</option>
                                 <option value="general">General Information</option>
                               </select>
                               {errors.interest && (
