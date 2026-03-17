@@ -3,7 +3,7 @@
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Calendar, User, ArrowLeft, Tag, Share2 } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { Header, Footer } from "@/components/layout";
 import { Container, Card, CardContent, Button } from "@/components/ui";
 import { blogPosts } from "@/content/blog";
@@ -55,16 +55,14 @@ export default function BlogPostPage() {
                 Back to Blog
               </Link>
               <div className="flex items-center gap-4 text-sm text-white/70 mb-4">
-                <span className="flex items-center gap-1">
-                  <Calendar className="w-4 h-4" />
+                <span>
                   {new Date(post.date).toLocaleDateString("en-US", {
                     month: "long",
                     day: "numeric",
                     year: "numeric",
                   })}
                 </span>
-                <span className="flex items-center gap-1">
-                  <User className="w-4 h-4" />
+                <span>
                   {post.author}
                 </span>
               </div>
@@ -78,7 +76,6 @@ export default function BlogPostPage() {
                       key={tag}
                       className="inline-flex items-center gap-1 px-3 py-1 bg-white/20 text-white text-sm rounded-full"
                     >
-                      <Tag className="w-3 h-3" />
                       {tag}
                     </span>
                   ))}
@@ -154,7 +151,6 @@ export default function BlogPostPage() {
             <div className="mt-12 pt-8 border-t border-gray-200">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-gray-500">
-                  <Share2 className="w-5 h-5" />
                   <span>Share this article</span>
                 </div>
                 <Link href="/blog">
@@ -181,8 +177,7 @@ export default function BlogPostPage() {
                     <Card className="h-full group" hover="lift">
                       <CardContent className="p-6">
                         <div className="flex items-center gap-4 text-sm text-gray-500 mb-3">
-                          <span className="flex items-center gap-1">
-                            <Calendar className="w-4 h-4" />
+                          <span>
                             {new Date(relatedPost.date).toLocaleDateString("en-US", {
                               month: "short",
                               day: "numeric",

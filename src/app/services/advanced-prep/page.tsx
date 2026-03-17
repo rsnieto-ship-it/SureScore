@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ArrowRight, CheckCircle, Star, Trophy, Zap, Target } from "lucide-react";
+import { ArrowRight, CheckCircle } from "lucide-react";
 import { Header, Footer } from "@/components/layout";
 import { Container, Card, CardContent, Button } from "@/components/ui";
 import { CTA } from "@/components/sections";
@@ -29,7 +29,6 @@ export default function AdvancedPrepPage() {
                   Back to Services
                 </Link>
                 <div className="inline-flex items-center gap-2 px-4 py-2 bg-[var(--accent-500)] rounded-full text-white text-sm font-medium mb-6">
-                  <Star className="w-4 h-4" />
                   Elite Program
                 </div>
                 <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold font-[family-name:var(--font-montserrat)] text-white mb-6">
@@ -62,22 +61,18 @@ export default function AdvancedPrepPage() {
               >
                 <div className="grid grid-cols-2 gap-4">
                   <Card variant="glass" className="p-6 text-white text-center">
-                    <Trophy className="w-10 h-10 mx-auto mb-3" />
                     <div className="text-3xl font-bold font-[family-name:var(--font-space-grotesk)]">99th</div>
                     <div className="text-white/80 text-sm">Percentile Target</div>
                   </Card>
                   <Card variant="glass" className="p-6 text-white text-center">
-                    <Target className="w-10 h-10 mx-auto mb-3" />
                     <div className="text-3xl font-bold font-[family-name:var(--font-space-grotesk)]">1500+</div>
                     <div className="text-white/80 text-sm">SAT Goal</div>
                   </Card>
                   <Card variant="glass" className="p-6 text-white text-center">
-                    <Zap className="w-10 h-10 mx-auto mb-3" />
                     <div className="text-3xl font-bold font-[family-name:var(--font-space-grotesk)]">34+</div>
                     <div className="text-white/80 text-sm">ACT Goal</div>
                   </Card>
                   <Card variant="glass" className="p-6 text-white text-center">
-                    <Star className="w-10 h-10 mx-auto mb-3" />
                     <div className="text-3xl font-bold font-[family-name:var(--font-space-grotesk)]">Elite</div>
                     <div className="text-white/80 text-sm">Instruction</div>
                   </Card>
@@ -136,7 +131,7 @@ export default function AdvancedPrepPage() {
                       "Score guarantee program",
                     ].map((item) => (
                       <li key={item} className="flex items-start gap-3">
-                        <Star className="w-5 h-5 text-[var(--accent-500)] flex-shrink-0 mt-0.5" />
+                        <span className="text-[var(--accent-500)] flex-shrink-0 mt-0.5">&#10003;</span>
                         <span>{item}</span>
                       </li>
                     ))}

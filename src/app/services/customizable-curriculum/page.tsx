@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ArrowRight, CheckCircle, BookOpen, Settings, FileText, Layers, Target, Palette } from "lucide-react";
+import { ArrowRight, CheckCircle } from "lucide-react";
 import { Header, Footer } from "@/components/layout";
 import { Container, Card, CardContent, Button } from "@/components/ui";
 import { CTA } from "@/components/sections";
@@ -58,7 +58,6 @@ export default function CustomizableCurriculumPage() {
               >
                 <Card variant="glass" className="p-8 text-white">
                   <div className="text-center">
-                    <BookOpen className="w-16 h-16 mx-auto mb-4 text-[var(--secondary-300)]" />
                     <div className="text-5xl font-bold font-[family-name:var(--font-space-grotesk)] mb-2">
                       100%
                     </div>
@@ -91,32 +90,26 @@ export default function CustomizableCurriculumPage() {
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {[
                 {
-                  icon: <Settings className="w-8 h-8" />,
                   title: "Pacing Guides",
                   description: "Custom-built pacing guides aligned to your district's academic calendar and testing windows.",
                 },
                 {
-                  icon: <Target className="w-8 h-8" />,
                   title: "Scope & Sequence",
                   description: "Tailored curriculum maps that integrate with your existing course offerings.",
                 },
                 {
-                  icon: <FileText className="w-8 h-8" />,
                   title: "Print Materials",
                   description: "Student workbooks, practice tests, and teacher guides with district branding options.",
                 },
                 {
-                  icon: <Layers className="w-8 h-8" />,
                   title: "Modular Content",
                   description: "Pick and choose specific units to supplement existing curriculum or fill gaps.",
                 },
                 {
-                  icon: <Palette className="w-8 h-8" />,
                   title: "Skill-Based Focus",
                   description: "Emphasize specific skills based on your student population's diagnostic data.",
                 },
                 {
-                  icon: <BookOpen className="w-8 h-8" />,
                   title: "Intervention Materials",
                   description: "Supplementary resources for students needing additional support or acceleration.",
                 },
@@ -130,9 +123,6 @@ export default function CustomizableCurriculumPage() {
                 >
                   <Card className="h-full" hover="lift">
                     <CardContent className="p-6">
-                      <div className="w-14 h-14 bg-[var(--primary-100)] text-[var(--primary-500)] rounded-2xl flex items-center justify-center mb-4">
-                        {feature.icon}
-                      </div>
                       <h3 className="text-lg font-bold text-gray-900 mb-2">
                         {feature.title}
                       </h3>

@@ -1,7 +1,6 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Star, Quote, GraduationCap, TrendingUp } from "lucide-react";
 import { Header, Footer } from "@/components/layout";
 import { Container, Card, CardContent } from "@/components/ui";
 import { CTA } from "@/components/sections";
@@ -158,11 +157,6 @@ export default function AlumniPage() {
                 >
                   <Card className="h-full" hover="lift">
                     <CardContent className="p-6">
-                      {/* Quote Icon */}
-                      <div className="w-10 h-10 bg-[var(--primary-100)] rounded-full flex items-center justify-center mb-4">
-                        <Quote className="w-5 h-5 text-[var(--primary-500)]" />
-                      </div>
-
                       {/* Quote */}
                       <p className="text-gray-600 mb-6 text-sm leading-relaxed">
                         &quot;{story.quote}&quot;
@@ -170,7 +164,6 @@ export default function AlumniPage() {
 
                       {/* Score Badge */}
                       <div className="inline-flex items-center gap-2 px-3 py-1 bg-[var(--secondary-100)] text-[var(--secondary-700)] rounded-full text-sm font-medium mb-4">
-                        <TrendingUp className="w-4 h-4" />
                         {story.scoreImprovement}
                       </div>
 
@@ -183,8 +176,7 @@ export default function AlumniPage() {
                           <div className="font-semibold text-gray-900">
                             {story.name}
                           </div>
-                          <div className="text-sm text-gray-500 flex items-center gap-1">
-                            <GraduationCap className="w-4 h-4" />
+                          <div className="text-sm text-gray-500">
                             {story.school}
                           </div>
                         </div>
@@ -224,9 +216,6 @@ export default function AlumniPage() {
                   transition={{ delay: index * 0.05 }}
                   className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow text-center"
                 >
-                  <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <GraduationCap className="w-6 h-6 text-gray-400" />
-                  </div>
                   <span className="text-sm text-gray-600 font-medium">
                     {college}
                   </span>

@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Phone, Calendar, FileText } from "lucide-react";
 import { Container, Button } from "@/components/ui";
 
 export function CTA() {
@@ -45,7 +44,6 @@ export function CTA() {
                 size="lg"
                 className="bg-white text-[var(--primary-600)] hover:bg-gray-100 w-full sm:w-auto"
               >
-                <Calendar className="mr-2 w-5 h-5" />
                 Request a Demo
               </Button>
             </Link>
@@ -55,7 +53,6 @@ export function CTA() {
                 variant="outline"
                 className="border-white text-white hover:bg-white hover:text-[var(--primary-600)] w-full sm:w-auto"
               >
-                <FileText className="mr-2 w-5 h-5" />
                 View Solutions
               </Button>
             </Link>

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ArrowRight, CheckCircle, Handshake, BarChart3, Users, BookOpen, Monitor, Award, Phone, Mail } from "lucide-react";
+import { ArrowRight, CheckCircle } from "lucide-react";
 import { Header, Footer } from "@/components/layout";
 import { Container, Card, CardContent, Button } from "@/components/ui";
 import { CTA } from "@/components/sections";
@@ -58,7 +58,6 @@ export default function DistrictPartnershipPage() {
               >
                 <Card variant="glass" className="p-8 text-white">
                   <div className="text-center">
-                    <Handshake className="w-16 h-16 mx-auto mb-4 text-[var(--secondary-300)]" />
                     <div className="text-5xl font-bold font-[family-name:var(--font-space-grotesk)] mb-2">
                       70+
                     </div>
@@ -91,22 +90,18 @@ export default function DistrictPartnershipPage() {
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
               {[
                 {
-                  icon: <Monitor className="w-8 h-8" />,
                   title: "Online Platform",
                   description: "Full access to our digital learning platform for all students district-wide.",
                 },
                 {
-                  icon: <Users className="w-8 h-8" />,
                   title: "Teacher Training",
                   description: "Comprehensive professional development for all participating educators.",
                 },
                 {
-                  icon: <BookOpen className="w-8 h-8" />,
                   title: "Custom Curriculum",
                   description: "Tailored curriculum materials aligned to your district's needs.",
                 },
                 {
-                  icon: <BarChart3 className="w-8 h-8" />,
                   title: "Data & Analytics",
                   description: "Advanced reporting and analytics dashboards for administrators.",
                 },
@@ -120,9 +115,6 @@ export default function DistrictPartnershipPage() {
                 >
                   <Card className="h-full" hover="lift">
                     <CardContent className="p-6 text-center">
-                      <div className="w-16 h-16 bg-[var(--primary-100)] text-[var(--primary-500)] rounded-2xl flex items-center justify-center mx-auto mb-4">
-                        {item.icon}
-                      </div>
                       <h3 className="text-lg font-bold text-gray-900 mb-2">
                         {item.title}
                       </h3>
@@ -309,7 +301,6 @@ export default function DistrictPartnershipPage() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
             >
-              <Award className="w-16 h-16 text-[var(--primary-500)] mx-auto mb-6" />
               <h2 className="text-3xl md:text-4xl font-bold font-[family-name:var(--font-montserrat)] text-gray-900 mb-6">
                 Ready to Partner with SureScore?
               </h2>
@@ -322,14 +313,12 @@ export default function DistrictPartnershipPage() {
                   href="tel:+18885458378"
                   className="inline-flex items-center justify-center gap-2 text-[var(--primary-600)] hover:text-[var(--primary-700)] font-medium"
                 >
-                  <Phone className="w-5 h-5" />
                   888-545-TEST (8378)
                 </a>
                 <a
                   href="mailto:info@surescore.com"
                   className="inline-flex items-center justify-center gap-2 text-[var(--primary-600)] hover:text-[var(--primary-700)] font-medium"
                 >
-                  <Mail className="w-5 h-5" />
                   info@surescore.com
                 </a>
               </div>

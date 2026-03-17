@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { FileText, Video, Download, BookOpen, Users, BarChart3, ArrowRight, ExternalLink } from "lucide-react";
+import { ArrowRight, ExternalLink } from "lucide-react";
 import Link from "next/link";
 import { Header, Footer } from "@/components/layout";
 import { Container, Card, CardContent, Button } from "@/components/ui";
@@ -12,7 +12,6 @@ const resourceCategories = [
     id: "guides",
     title: "Implementation Guides",
     description: "Step-by-step guides for districts implementing SureScore solutions",
-    icon: <BookOpen className="w-8 h-8" />,
     resources: [
       { title: "District Partnership Quick Start Guide", type: "PDF", size: "2.4 MB" },
       { title: "Teacher Training Implementation Handbook", type: "PDF", size: "3.1 MB" },
@@ -24,7 +23,6 @@ const resourceCategories = [
     id: "webinars",
     title: "Webinars & Training Videos",
     description: "On-demand video resources for administrators and teachers",
-    icon: <Video className="w-8 h-8" />,
     resources: [
       { title: "Maximizing CCMR Outcomes with SureScore", type: "Video", duration: "45 min" },
       { title: "Data-Driven Instruction Strategies", type: "Video", duration: "30 min" },
@@ -36,7 +34,6 @@ const resourceCategories = [
     id: "research",
     title: "Research & White Papers",
     description: "Evidence-based insights on college readiness and CCMR improvement",
-    icon: <FileText className="w-8 h-8" />,
     resources: [
       { title: "The State of CCMR in Texas: 2024 Report", type: "PDF", size: "4.2 MB" },
       { title: "Effective Test Prep Strategies for Districts", type: "PDF", size: "2.8 MB" },
@@ -48,7 +45,6 @@ const resourceCategories = [
     id: "templates",
     title: "Planning Templates",
     description: "Customizable templates for district planning and reporting",
-    icon: <BarChart3 className="w-8 h-8" />,
     resources: [
       { title: "Annual CCMR Improvement Plan Template", type: "XLSX", size: "156 KB" },
       { title: "Teacher Training Schedule Template", type: "DOCX", size: "89 KB" },
@@ -120,10 +116,7 @@ export default function ResourcesPage() {
                   viewport={{ once: true }}
                   transition={{ delay: categoryIndex * 0.1 }}
                 >
-                  <div className="flex items-start gap-4 mb-8">
-                    <div className="w-16 h-16 bg-[var(--primary-100)] text-[var(--primary-500)] rounded-2xl flex items-center justify-center flex-shrink-0">
-                      {category.icon}
-                    </div>
+                  <div className="mb-8">
                     <div>
                       <h2 className="text-2xl font-bold font-[family-name:var(--font-montserrat)] text-gray-900 mb-2">
                         {category.title}
@@ -144,11 +137,6 @@ export default function ResourcesPage() {
                         <Card hover="lift" className="cursor-pointer">
                           <CardContent className="p-4 flex items-center justify-between">
                             <div className="flex items-center gap-3">
-                              {resource.type === "Video" ? (
-                                <Video className="w-5 h-5 text-[var(--primary-500)]" />
-                              ) : (
-                                <FileText className="w-5 h-5 text-[var(--primary-500)]" />
-                              )}
                               <div>
                                 <h3 className="font-medium text-gray-900">{resource.title}</h3>
                                 <p className="text-sm text-gray-500">
@@ -158,7 +146,6 @@ export default function ResourcesPage() {
                                 </p>
                               </div>
                             </div>
-                            <Download className="w-5 h-5 text-gray-400" />
                           </CardContent>
                         </Card>
                       </motion.div>
@@ -202,9 +189,6 @@ export default function ResourcesPage() {
                 >
                   <Card className="h-full" hover="lift">
                     <CardContent className="p-6">
-                      <div className="w-12 h-12 bg-[var(--secondary-100)] text-[var(--secondary-500)] rounded-xl flex items-center justify-center mb-4">
-                        <Video className="w-6 h-6" />
-                      </div>
                       <h3 className="text-lg font-bold font-[family-name:var(--font-montserrat)] text-gray-900 mb-2">
                         {webinar.title}
                       </h3>
@@ -250,7 +234,7 @@ export default function ResourcesPage() {
                     "Partner community forum and networking",
                   ].map((item) => (
                     <li key={item} className="flex items-start gap-3">
-                      <Users className="w-5 h-5 text-[var(--secondary-500)] flex-shrink-0 mt-0.5" />
+                      <span className="text-[var(--secondary-500)] flex-shrink-0 mt-0.5">&#10003;</span>
                       <span className="text-gray-700">{item}</span>
                     </li>
                   ))}
@@ -274,7 +258,6 @@ export default function ResourcesPage() {
               >
                 <Card variant="gradient" className="p-8">
                   <div className="text-center">
-                    <Users className="w-16 h-16 mx-auto mb-4" />
                     <h3 className="text-2xl font-bold mb-2">Not Yet a Partner?</h3>
                     <p className="text-white/80 mb-6">
                       Learn how your district can benefit from a SureScore partnership.

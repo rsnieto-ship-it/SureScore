@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ArrowRight, CheckCircle, Award, School, Calendar, Users } from "lucide-react";
+import { ArrowRight, CheckCircle } from "lucide-react";
 import { Header, Footer } from "@/components/layout";
 import { Container, Card, CardContent, Button } from "@/components/ui";
 import { CTA } from "@/components/sections";
@@ -29,7 +29,6 @@ export default function PSATPrepPage() {
                   Back to Services
                 </Link>
                 <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/20 rounded-full text-white text-sm font-medium mb-6">
-                  <School className="w-4 h-4" />
                   Classroom Delivery
                 </div>
                 <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold font-[family-name:var(--font-montserrat)] text-white mb-6">
@@ -61,7 +60,6 @@ export default function PSATPrepPage() {
                 className="hidden lg:block"
               >
                 <Card variant="glass" className="p-8 text-white text-center">
-                  <Award className="w-16 h-16 mx-auto mb-4" />
                   <div className="text-3xl font-bold font-[family-name:var(--font-montserrat)] mb-2">
                     National Merit
                   </div>
@@ -159,19 +157,16 @@ export default function PSATPrepPage() {
             <div className="grid md:grid-cols-3 gap-8">
               {[
                 {
-                  icon: <School className="w-10 h-10" />,
                   title: "In-School Sessions",
                   description:
                     "Expert instructors come to your school, minimizing disruption to students' schedules.",
                 },
                 {
-                  icon: <Calendar className="w-10 h-10" />,
                   title: "Flexible Scheduling",
                   description:
                     "Work with your school calendar to find optimal times for prep sessions.",
                 },
                 {
-                  icon: <Users className="w-10 h-10" />,
                   title: "Group Learning",
                   description:
                     "Students learn together, building community while preparing for success.",
@@ -186,9 +181,6 @@ export default function PSATPrepPage() {
                 >
                   <Card className="h-full text-center" hover="lift">
                     <CardContent className="p-8">
-                      <div className="w-20 h-20 bg-[var(--primary-100)] text-[var(--primary-500)] rounded-3xl flex items-center justify-center mx-auto mb-6">
-                        {feature.icon}
-                      </div>
                       <h3 className="text-xl font-bold text-gray-900 mb-3">
                         {feature.title}
                       </h3>

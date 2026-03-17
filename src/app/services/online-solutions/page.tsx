@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ArrowRight, CheckCircle, Monitor, BarChart3, Users, Clock, Shield, Zap } from "lucide-react";
+import { ArrowRight, CheckCircle } from "lucide-react";
 import { Header, Footer } from "@/components/layout";
 import { Container, Card, CardContent, Button } from "@/components/ui";
 import { CTA } from "@/components/sections";
@@ -58,7 +58,6 @@ export default function OnlineSolutionsPage() {
               >
                 <Card variant="glass" className="p-8 text-white">
                   <div className="text-center">
-                    <Monitor className="w-16 h-16 mx-auto mb-4 text-[var(--secondary-300)]" />
                     <div className="text-5xl font-bold font-[family-name:var(--font-space-grotesk)] mb-2">
                       24/7
                     </div>
@@ -91,32 +90,26 @@ export default function OnlineSolutionsPage() {
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {[
                 {
-                  icon: <BarChart3 className="w-8 h-8" />,
                   title: "Diagnostic Assessments",
                   description: "Comprehensive baseline testing to identify student strengths and areas for growth across all tested domains.",
                 },
                 {
-                  icon: <Zap className="w-8 h-8" />,
                   title: "Personalized Learning Paths",
                   description: "AI-driven adaptive learning that adjusts to each student's pace and skill level automatically.",
                 },
                 {
-                  icon: <Monitor className="w-8 h-8" />,
                   title: "Administrator Dashboard",
                   description: "Real-time analytics showing district, school, and classroom-level progress and performance trends.",
                 },
                 {
-                  icon: <Users className="w-8 h-8" />,
                   title: "Teacher Tools",
                   description: "Assignment creation, progress monitoring, and intervention alerts for educators.",
                 },
                 {
-                  icon: <Shield className="w-8 h-8" />,
                   title: "TEKS & CCMR Aligned",
                   description: "All content mapped to Texas standards and CCMR accountability indicators.",
                 },
                 {
-                  icon: <Clock className="w-8 h-8" />,
                   title: "Flexible Access",
                   description: "Available 24/7 on any device, supporting both in-school and at-home learning.",
                 },
@@ -130,9 +123,6 @@ export default function OnlineSolutionsPage() {
                 >
                   <Card className="h-full" hover="lift">
                     <CardContent className="p-6">
-                      <div className="w-14 h-14 bg-[var(--primary-100)] text-[var(--primary-500)] rounded-2xl flex items-center justify-center mb-4">
-                        {feature.icon}
-                      </div>
                       <h3 className="text-lg font-bold text-gray-900 mb-2">
                         {feature.title}
                       </h3>

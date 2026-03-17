@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ArrowRight, CheckCircle, MapPin, BarChart3, FileCheck, BookMarked } from "lucide-react";
+import { ArrowRight, CheckCircle } from "lucide-react";
 import { Header, Footer } from "@/components/layout";
 import { Container, Card, CardContent, Button } from "@/components/ui";
 import { CTA } from "@/components/sections";
@@ -29,7 +29,6 @@ export default function TSIA2PrepPage() {
                   Back to Services
                 </Link>
                 <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/20 rounded-full text-white text-sm font-medium mb-6">
-                  <MapPin className="w-4 h-4" />
                   Texas-Specific Program
                 </div>
                 <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold font-[family-name:var(--font-montserrat)] text-white mb-6">
@@ -104,22 +103,18 @@ export default function TSIA2PrepPage() {
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
               {[
                 {
-                  icon: <BookMarked className="w-8 h-8" />,
                   title: "TEKS Aligned",
                   description: "Curriculum aligned with all Texas Essential Knowledge and Skills standards.",
                 },
                 {
-                  icon: <BarChart3 className="w-8 h-8" />,
                   title: "Data Analytics",
                   description: "Track student progress with detailed analytics and reporting.",
                 },
                 {
-                  icon: <FileCheck className="w-8 h-8" />,
                   title: "College Ready",
                   description: "Prepare students to meet college readiness benchmarks.",
                 },
                 {
-                  icon: <MapPin className="w-8 h-8" />,
                   title: "Texas Focused",
                   description: "Specifically designed for Texas public college requirements.",
                 },
@@ -133,9 +128,6 @@ export default function TSIA2PrepPage() {
                 >
                   <Card className="h-full" hover="lift">
                     <CardContent className="p-6 text-center">
-                      <div className="w-16 h-16 bg-[var(--primary-100)] text-[var(--primary-500)] rounded-2xl flex items-center justify-center mx-auto mb-4">
-                        {feature.icon}
-                      </div>
                       <h3 className="text-lg font-bold text-gray-900 mb-2">
                         {feature.title}
                       </h3>

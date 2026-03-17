@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Calendar, Clock, User, CheckCircle, ArrowRight } from "lucide-react";
+import { CheckCircle, ArrowRight } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Header, Footer } from "@/components/layout";
@@ -86,25 +86,19 @@ export default function BookingPage() {
                 <div className="space-y-6">
                   {[
                     {
-                      icon: <Calendar className="w-6 h-6" />,
                       title: "30-Minute Consultation",
                       description: "A focused discussion about your academic goals and needs.",
                     },
                     {
-                      icon: <User className="w-6 h-6" />,
                       title: "Personalized Assessment",
                       description: "We'll evaluate your current level and identify areas for improvement.",
                     },
                     {
-                      icon: <Clock className="w-6 h-6" />,
                       title: "Custom Recommendations",
                       description: "Receive a tailored program recommendation based on your goals.",
                     },
                   ].map((item, index) => (
                     <div key={item.title} className="flex gap-4">
-                      <div className="w-12 h-12 bg-[var(--primary-100)] text-[var(--primary-500)] rounded-xl flex items-center justify-center flex-shrink-0">
-                        {item.icon}
-                      </div>
                       <div>
                         <h3 className="font-semibold text-gray-900 mb-1">
                           {item.title}
@@ -334,7 +328,6 @@ export default function BookingPage() {
                             ) : (
                               <>
                                 Book Consultation
-                                <Calendar className="ml-2 w-5 h-5" />
                               </>
                             )}
                           </Button>

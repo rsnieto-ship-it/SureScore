@@ -3,12 +3,6 @@
 import Link from "next/link";
 import { motion } from "framer-motion";
 import {
-  BookOpen,
-  Calculator,
-  Calendar,
-  FileText,
-  GraduationCap,
-  Users,
   ExternalLink,
   ArrowRight,
 } from "lucide-react";
@@ -18,7 +12,6 @@ import { CTA } from "@/components/sections";
 
 const tools = [
   {
-    icon: <Calculator className="w-8 h-8" />,
     title: "College Cost Calculator",
     description:
       "Estimate the true cost of attendance at different universities, including tuition, fees, room, and board.",
@@ -26,7 +19,6 @@ const tools = [
     external: true,
   },
   {
-    icon: <Calendar className="w-8 h-8" />,
     title: "Application Timeline",
     description:
       "Stay on track with our comprehensive college application timeline, from junior year through decision day.",
@@ -34,7 +26,6 @@ const tools = [
     external: false,
   },
   {
-    icon: <FileText className="w-8 h-8" />,
     title: "Essay Writing Tips",
     description:
       "Learn how to craft compelling college essays that showcase your unique story and stand out to admissions officers.",
@@ -42,7 +33,6 @@ const tools = [
     external: false,
   },
   {
-    icon: <BookOpen className="w-8 h-8" />,
     title: "SAT/ACT Score Comparison",
     description:
       "Compare your SAT and ACT scores to understand which test showcases your abilities better.",
@@ -50,7 +40,6 @@ const tools = [
     external: true,
   },
   {
-    icon: <GraduationCap className="w-8 h-8" />,
     title: "Scholarship Finder",
     description:
       "Discover scholarships you qualify for based on your academic profile, interests, and background.",
@@ -58,7 +47,6 @@ const tools = [
     external: true,
   },
   {
-    icon: <Users className="w-8 h-8" />,
     title: "College Match Tool",
     description:
       "Find colleges that match your preferences for size, location, majors, and campus culture.",
@@ -151,9 +139,6 @@ export default function CollegeToolsPage() {
                     <a href={tool.link} target="_blank" rel="noopener noreferrer">
                       <Card className="h-full group cursor-pointer" hover="lift">
                         <CardContent className="p-6">
-                          <div className="w-14 h-14 bg-[var(--primary-100)] text-[var(--primary-500)] rounded-2xl flex items-center justify-center mb-4 group-hover:bg-[var(--primary-500)] group-hover:text-white transition-colors">
-                            {tool.icon}
-                          </div>
                           <h3 className="text-lg font-bold text-gray-900 mb-2 flex items-center gap-2">
                             {tool.title}
                             <ExternalLink className="w-4 h-4 text-gray-400" />
@@ -166,9 +151,6 @@ export default function CollegeToolsPage() {
                     <Link href={tool.link}>
                       <Card className="h-full group cursor-pointer" hover="lift">
                         <CardContent className="p-6">
-                          <div className="w-14 h-14 bg-[var(--primary-100)] text-[var(--primary-500)] rounded-2xl flex items-center justify-center mb-4 group-hover:bg-[var(--primary-500)] group-hover:text-white transition-colors">
-                            {tool.icon}
-                          </div>
                           <h3 className="text-lg font-bold text-gray-900 mb-2">
                             {tool.title}
                           </h3>

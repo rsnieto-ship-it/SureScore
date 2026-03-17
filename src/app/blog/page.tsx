@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Calendar, User, ArrowRight, Tag } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { Header, Footer } from "@/components/layout";
 import { Container, Card, CardContent } from "@/components/ui";
 import { blogPosts } from "@/content/blog";
@@ -56,16 +56,14 @@ export default function BlogPage() {
                     </div>
                     <CardContent className="p-8 flex flex-col justify-center">
                       <div className="flex items-center gap-4 text-sm text-gray-500 mb-4">
-                        <span className="flex items-center gap-1">
-                          <Calendar className="w-4 h-4" />
+                        <span>
                           {new Date(blogPosts[0].date).toLocaleDateString("en-US", {
                             month: "long",
                             day: "numeric",
                             year: "numeric",
                           })}
                         </span>
-                        <span className="flex items-center gap-1">
-                          <User className="w-4 h-4" />
+                        <span>
                           {blogPosts[0].author}
                         </span>
                       </div>
@@ -102,8 +100,7 @@ export default function BlogPage() {
                       </div>
                       <CardContent className="p-6">
                         <div className="flex items-center gap-4 text-sm text-gray-500 mb-3">
-                          <span className="flex items-center gap-1">
-                            <Calendar className="w-4 h-4" />
+                          <span>
                             {new Date(post.date).toLocaleDateString("en-US", {
                               month: "short",
                               day: "numeric",
@@ -124,7 +121,6 @@ export default function BlogPage() {
                                 key={tag}
                                 className="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full"
                               >
-                                <Tag className="w-3 h-3" />
                                 {tag}
                               </span>
                             ))}

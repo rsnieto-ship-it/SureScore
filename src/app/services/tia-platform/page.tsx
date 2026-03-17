@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ArrowRight, CheckCircle, Database, Link2, BarChart3, AlertTriangle, FileSpreadsheet, UserCheck } from "lucide-react";
+import { ArrowRight, CheckCircle } from "lucide-react";
 import { Header, Footer } from "@/components/layout";
 import { Container, Card, CardContent, Button } from "@/components/ui";
 import { CTA } from "@/components/sections";
@@ -58,7 +58,6 @@ export default function TIAPlatformPage() {
               >
                 <Card variant="glass" className="p-8 text-white">
                   <div className="text-center">
-                    <Database className="w-16 h-16 mx-auto mb-4 text-[var(--secondary-300)]" />
                     <div className="text-5xl font-bold font-[family-name:var(--font-space-grotesk)] mb-2">
                       12
                     </div>
@@ -91,32 +90,26 @@ export default function TIAPlatformPage() {
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {[
                 {
-                  icon: <Link2 className="w-8 h-8" />,
                   title: "Automatic Roster Matching",
                   description: "Eliminates manual spreadsheet matching by automatically linking student rosters to assessment records across all vendors.",
                 },
                 {
-                  icon: <BarChart3 className="w-8 h-8" />,
                   title: "Growth Model Calculations",
                   description: "TEA-aligned growth calculations built in for all supported vendors, removing the need for manual formulas.",
                 },
                 {
-                  icon: <AlertTriangle className="w-8 h-8" />,
                   title: "Error & Gap Flagging",
                   description: "Catches missing data, mismatched records, and formatting issues before you submit to TEA.",
                 },
                 {
-                  icon: <FileSpreadsheet className="w-8 h-8" />,
                   title: "30-Column TEA Output",
                   description: "Generates the exact 30-column file format TEA requires, ready to upload without manual formatting.",
                 },
                 {
-                  icon: <UserCheck className="w-8 h-8" />,
                   title: "Roster Verification Portal",
                   description: "Teachers self-verify their rosters through a dedicated portal, reducing administrative back-and-forth.",
                 },
                 {
-                  icon: <Database className="w-8 h-8" />,
                   title: "Multi-Vendor Integration",
                   description: "Supports iReady, NWEA MAP, STAAR, TeachTown, Exploros, YouScience, and TSIA2 assessment data.",
                 },
@@ -130,9 +123,6 @@ export default function TIAPlatformPage() {
                 >
                   <Card className="h-full" hover="lift">
                     <CardContent className="p-6">
-                      <div className="w-14 h-14 bg-[var(--primary-100)] text-[var(--primary-500)] rounded-2xl flex items-center justify-center mb-4">
-                        {feature.icon}
-                      </div>
                       <h3 className="text-lg font-bold text-gray-900 mb-2">
                         {feature.title}
                       </h3>

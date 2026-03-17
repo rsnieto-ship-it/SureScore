@@ -1,7 +1,6 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Star, Quote, Building2 } from "lucide-react";
 import { Container, Card, CardContent } from "@/components/ui";
 import { testimonials } from "@/content/testimonials";
 
@@ -42,21 +41,6 @@ export function Testimonials() {
             >
               <Card className="h-full" variant="elevated" hover="lift">
                 <CardContent className="p-6">
-                  {/* Quote Icon */}
-                  <div className="w-10 h-10 bg-[var(--primary-100)] rounded-full flex items-center justify-center mb-4">
-                    <Quote className="w-5 h-5 text-[var(--primary-500)]" />
-                  </div>
-
-                  {/* Rating */}
-                  <div className="flex gap-1 mb-4">
-                    {[...Array(testimonial.rating || 5)].map((_, i) => (
-                      <Star
-                        key={i}
-                        className="w-4 h-4 fill-[var(--accent-500)] text-[var(--accent-500)]"
-                      />
-                    ))}
-                  </div>
-
                   {/* Content */}
                   <p className="text-gray-600 mb-6 text-sm leading-relaxed">
                     &quot;{testimonial.content}&quot;
@@ -71,8 +55,7 @@ export function Testimonials() {
                       <div className="font-semibold text-gray-900">
                         {testimonial.name}
                       </div>
-                      <div className="text-xs text-gray-500 flex items-center gap-1">
-                        <Building2 className="w-3 h-3" />
+                      <div className="text-xs text-gray-500">
                         {testimonial.role}
                       </div>
                     </div>

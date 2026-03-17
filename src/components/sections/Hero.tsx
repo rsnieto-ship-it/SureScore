@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ArrowRight, Brain, Database, TrendingUp, Award } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { Container } from "@/components/ui";
 
 export function Hero() {
@@ -85,9 +85,6 @@ export function Hero() {
           {/* Door 1: Student Achievement */}
           <Link href="/services/ai-tutor" className="group block">
             <div className="relative bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-8 md:p-10 hover:bg-white/15 hover:border-white/40 transition-all duration-300 h-full">
-              <div className="w-14 h-14 bg-[var(--secondary-500)] rounded-2xl flex items-center justify-center mb-6">
-                <Brain className="w-7 h-7 text-white" />
-              </div>
               <h2 className="text-2xl md:text-3xl font-bold font-[family-name:var(--font-montserrat)] text-white mb-3">
                 Boost Student Scores
               </h2>
@@ -98,15 +95,15 @@ export function Hero() {
               </p>
               <div className="space-y-3 mb-8">
                 <div className="flex items-center gap-2 text-white/60 text-sm">
-                  <TrendingUp className="w-4 h-4 text-[var(--secondary-300)]" />
+                  <span className="text-[var(--secondary-300)]">&#10003;</span>
                   <span>179-pt avg. SAT increase</span>
                 </div>
                 <div className="flex items-center gap-2 text-white/60 text-sm">
-                  <TrendingUp className="w-4 h-4 text-[var(--secondary-300)]" />
+                  <span className="text-[var(--secondary-300)]">&#10003;</span>
                   <span>3.1-pt avg. ACT increase</span>
                 </div>
                 <div className="flex items-center gap-2 text-white/60 text-sm">
-                  <TrendingUp className="w-4 h-4 text-[var(--secondary-300)]" />
+                  <span className="text-[var(--secondary-300)]">&#10003;</span>
                   <span>Guaranteed TSIA2 results</span>
                 </div>
               </div>
@@ -120,9 +117,6 @@ export function Hero() {
           {/* Door 2: Teacher Excellence */}
           <Link href="/services/tia-platform" className="group block">
             <div className="relative bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-8 md:p-10 hover:bg-white/15 hover:border-white/40 transition-all duration-300 h-full">
-              <div className="w-14 h-14 bg-[var(--secondary-500)] rounded-2xl flex items-center justify-center mb-6">
-                <Database className="w-7 h-7 text-white" />
-              </div>
               <h2 className="text-2xl md:text-3xl font-bold font-[family-name:var(--font-montserrat)] text-white mb-3">
                 Retain Top Talent
               </h2>
@@ -133,15 +127,15 @@ export function Hero() {
               </p>
               <div className="space-y-3 mb-8">
                 <div className="flex items-center gap-2 text-white/60 text-sm">
-                  <Award className="w-4 h-4 text-[var(--secondary-300)]" />
+                  <span className="text-[var(--secondary-300)]">&#10003;</span>
                   <span>12 assessment vendor integrations</span>
                 </div>
                 <div className="flex items-center gap-2 text-white/60 text-sm">
-                  <Award className="w-4 h-4 text-[var(--secondary-300)]" />
+                  <span className="text-[var(--secondary-300)]">&#10003;</span>
                   <span>TEA-aligned growth calculations</span>
                 </div>
                 <div className="flex items-center gap-2 text-white/60 text-sm">
-                  <Award className="w-4 h-4 text-[var(--secondary-300)]" />
+                  <span className="text-[var(--secondary-300)]">&#10003;</span>
                   <span>One-click 30-column TEA output</span>
                 </div>
               </div>

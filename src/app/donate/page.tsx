@@ -1,7 +1,6 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Heart, Users, BookOpen, Star } from "lucide-react";
 import { Header, Footer } from "@/components/layout";
 import { Container, Card, CardContent, Button } from "@/components/ui";
 
@@ -16,26 +15,22 @@ const donationTiers = [
     amount: 50,
     title: "Study Materials",
     description: "Provides practice tests and study guides for one student.",
-    icon: <BookOpen className="w-6 h-6" />,
   },
   {
     amount: 100,
     title: "Tutorial Session",
     description: "Sponsors a one-on-one tutoring session for a student in need.",
-    icon: <Users className="w-6 h-6" />,
   },
   {
     amount: 200,
     title: "Full Program Access",
     description: "Gives a deserving student full access to our test prep program.",
-    icon: <Star className="w-6 h-6" />,
     featured: true,
   },
   {
     amount: 500,
     title: "Scholarship Fund",
     description: "Contributes to our scholarship fund for underserved students.",
-    icon: <Heart className="w-6 h-6" />,
   },
 ];
 
@@ -53,9 +48,6 @@ export default function DonatePage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
             >
-              <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-6">
-                <Heart className="w-10 h-10 text-white" />
-              </div>
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold font-[family-name:var(--font-montserrat)] text-white mb-6">
                 Support Student{" "}
                 <span className="text-[var(--secondary-300)]">Success</span>
@@ -131,9 +123,6 @@ export default function DonatePage() {
                       </div>
                     )}
                     <CardContent className="p-6 text-center">
-                      <div className="w-14 h-14 bg-[var(--primary-100)] text-[var(--primary-500)] rounded-2xl flex items-center justify-center mx-auto mb-4">
-                        {tier.icon}
-                      </div>
                       <div className="text-3xl font-bold font-[family-name:var(--font-space-grotesk)] text-gray-900 mb-2">
                         ${tier.amount}
                       </div>
@@ -212,7 +201,7 @@ export default function DonatePage() {
                     "Direct impact on student outcomes",
                   ].map((item) => (
                     <li key={item} className="flex items-start gap-3">
-                      <Heart className="w-5 h-5 text-[var(--accent-500)] flex-shrink-0 mt-0.5" />
+                      <span className="text-[var(--accent-500)] flex-shrink-0 mt-0.5">&#10003;</span>
                       <span className="text-gray-700">{item}</span>
                     </li>
                   ))}

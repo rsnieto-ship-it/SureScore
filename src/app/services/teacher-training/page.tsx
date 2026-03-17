@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ArrowRight, CheckCircle, Users, GraduationCap, BookOpen, Award, Calendar, Video } from "lucide-react";
+import { ArrowRight, CheckCircle } from "lucide-react";
 import { Header, Footer } from "@/components/layout";
 import { Container, Card, CardContent, Button } from "@/components/ui";
 import { CTA } from "@/components/sections";
@@ -58,7 +58,6 @@ export default function TeacherTrainingPage() {
               >
                 <Card variant="glass" className="p-8 text-white">
                   <div className="text-center">
-                    <GraduationCap className="w-16 h-16 mx-auto mb-4 text-[var(--secondary-300)]" />
                     <div className="text-5xl font-bold font-[family-name:var(--font-space-grotesk)] mb-2">
                       5,000+
                     </div>
@@ -91,32 +90,26 @@ export default function TeacherTrainingPage() {
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {[
                 {
-                  icon: <Calendar className="w-8 h-8" />,
                   title: "On-Site Workshops",
                   description: "Full-day or half-day sessions at your campus with hands-on practice and collaborative activities.",
                 },
                 {
-                  icon: <Video className="w-8 h-8" />,
                   title: "Virtual Training",
                   description: "Live online sessions for flexible scheduling, perfect for multi-campus districts.",
                 },
                 {
-                  icon: <BookOpen className="w-8 h-8" />,
                   title: "Self-Paced Modules",
                   description: "On-demand video courses teachers can complete at their own pace with certification.",
                 },
                 {
-                  icon: <Users className="w-8 h-8" />,
                   title: "Coaching Sessions",
                   description: "One-on-one or small group coaching for teachers needing additional support.",
                 },
                 {
-                  icon: <Award className="w-8 h-8" />,
                   title: "Leadership Training",
                   description: "Specialized training for department heads and instructional coaches.",
                 },
                 {
-                  icon: <GraduationCap className="w-8 h-8" />,
                   title: "New Teacher Bootcamp",
                   description: "Intensive program for teachers new to test prep instruction.",
                 },
@@ -130,9 +123,6 @@ export default function TeacherTrainingPage() {
                 >
                   <Card className="h-full" hover="lift">
                     <CardContent className="p-6">
-                      <div className="w-14 h-14 bg-[var(--primary-100)] text-[var(--primary-500)] rounded-2xl flex items-center justify-center mb-4">
-                        {program.icon}
-                      </div>
                       <h3 className="text-lg font-bold text-gray-900 mb-2">
                         {program.title}
                       </h3>
@@ -219,9 +209,6 @@ export default function TeacherTrainingPage() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
             >
-              <div className="w-20 h-20 bg-[var(--secondary-100)] text-[var(--secondary-500)] rounded-3xl flex items-center justify-center mx-auto mb-6">
-                <Award className="w-10 h-10" />
-              </div>
               <h2 className="text-3xl md:text-4xl font-bold font-[family-name:var(--font-montserrat)] text-gray-900 mb-6">
                 Earn CPE Credits
               </h2>

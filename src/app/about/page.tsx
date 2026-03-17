@@ -2,18 +2,10 @@
 
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { Target, Handshake, BarChart3, Award, CheckCircle, Building2, GraduationCap, TrendingUp } from "lucide-react";
 import { Header, Footer } from "@/components/layout";
 import { Container, Card, CardContent } from "@/components/ui";
 import { companyInfo } from "@/content/team";
 import { CTA } from "@/components/sections";
-
-const valueIcons: { [key: string]: React.ReactNode } = {
-  "Results-Driven": <Target className="w-6 h-6" />,
-  "Partnership-Focused": <Handshake className="w-6 h-6" />,
-  "Data-Informed": <BarChart3 className="w-6 h-6" />,
-  Excellence: <Award className="w-6 h-6" />,
-};
 
 export default function AboutPage() {
   return (
@@ -97,10 +89,10 @@ export default function AboutPage() {
             </motion.div>
             <div className="grid md:grid-cols-4 gap-8">
               {[
-                { icon: <Building2 className="w-8 h-8" />, value: "70+", label: "Partner Districts" },
-                { icon: <TrendingUp className="w-8 h-8" />, value: "179", label: "Avg. SAT Point Increase" },
-                { icon: <GraduationCap className="w-8 h-8" />, value: "3.1", label: "Avg. ACT Point Increase" },
-                { icon: <Award className="w-8 h-8" />, value: "30+", label: "Years of Excellence" },
+                { value: "70+", label: "Partner Districts" },
+                { value: "179", label: "Avg. SAT Point Increase" },
+                { value: "3.1", label: "Avg. ACT Point Increase" },
+                { value: "30+", label: "Years of Excellence" },
               ].map((stat, index) => (
                 <motion.div
                   key={stat.label}
@@ -110,9 +102,6 @@ export default function AboutPage() {
                   viewport={{ once: true }}
                   transition={{ delay: index * 0.1 }}
                 >
-                  <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                    {stat.icon}
-                  </div>
                   <div className="text-4xl md:text-5xl font-bold font-[family-name:var(--font-space-grotesk)] mb-2">
                     {stat.value}
                   </div>
@@ -152,9 +141,6 @@ export default function AboutPage() {
                 >
                   <Card className="h-full text-center" hover="lift">
                     <CardContent className="p-8">
-                      <div className="w-14 h-14 bg-[var(--primary-100)] text-[var(--primary-500)] rounded-2xl flex items-center justify-center mx-auto mb-6">
-                        {valueIcons[value.title]}
-                      </div>
                       <h3 className="text-xl font-bold font-[family-name:var(--font-montserrat)] text-gray-900 mb-3">
                         {value.title}
                       </h3>
@@ -253,7 +239,7 @@ export default function AboutPage() {
                     "Data-driven progress monitoring",
                   ].map((item) => (
                     <li key={item} className="flex items-start gap-3">
-                      <CheckCircle className="w-6 h-6 text-[var(--secondary-500)] flex-shrink-0 mt-0.5" />
+                      <span className="text-[var(--secondary-500)] flex-shrink-0 mt-0.5">&#10003;</span>
                       <span className="text-gray-700">{item}</span>
                     </li>
                   ))}

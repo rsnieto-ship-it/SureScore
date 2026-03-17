@@ -4,16 +4,6 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import {
   ArrowRight,
-  Brain,
-  Clock,
-  MessageCircle,
-  Target,
-  BarChart3,
-  Shield,
-  Zap,
-  BookOpen,
-  CheckCircle,
-  Sparkles,
 } from "lucide-react";
 import { Header, Footer } from "@/components/layout";
 import { Container, Card, CardContent, Button } from "@/components/ui";
@@ -49,25 +39,21 @@ const steps = [
 
 const personalizedFeatures = [
   {
-    icon: <Target className="w-8 h-8" />,
     title: "Diagnostic-Driven",
     description:
       "Every student starts with a smart diagnostic that maps exact gaps across all TSIA2 Math and ELAR standards.",
   },
   {
-    icon: <BookOpen className="w-8 h-8" />,
     title: "Proven Curriculum",
     description:
       "SureScore's expert-crafted content — built over a decade — is delivered and personalized to each student's level.",
   },
   {
-    icon: <Zap className="w-8 h-8" />,
     title: "Adaptive Difficulty",
     description:
       "Questions adjust in real time. Too easy? Harder problems. Struggling? Scaffolded support with hints and context.",
   },
   {
-    icon: <BarChart3 className="w-8 h-8" />,
     title: "Curriculum-Aligned",
     description:
       "All content maps to TSIA2 objectives — Math (Quantitative, Algebraic, Geometric) and ELAR (Reading, Writing, Essay).",
@@ -76,25 +62,21 @@ const personalizedFeatures = [
 
 const tutorFeatures = [
   {
-    icon: <MessageCircle className="w-8 h-8" />,
     title: "Socratic Method",
     description:
       "The AI never just gives answers. It asks the right questions to guide students to their own breakthroughs.",
   },
   {
-    icon: <Sparkles className="w-8 h-8" />,
     title: "Infinite Patience",
     description:
       "No judgment, no frustration. Always calm, encouraging, and ready to try a new approach — however long it takes.",
   },
   {
-    icon: <Clock className="w-8 h-8" />,
     title: "Always Available",
     description:
       "On-demand at any hour. No scheduling, no waiting — students get help exactly when they need it.",
   },
   {
-    icon: <Shield className="w-8 h-8" />,
     title: "Safe & Private",
     description:
       "Student data is secure. Built with privacy-first design for school environments.",
@@ -275,17 +257,14 @@ export default function AITutorPage() {
             <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
               {[
                 {
-                  icon: <Brain className="w-10 h-10" />,
                   title: "Personalized",
                   desc: "Every student gets a unique learning path built around their exact gaps, strengths, and pace.",
                 },
                 {
-                  icon: <Zap className="w-10 h-10" />,
                   title: "Intelligent",
                   desc: "AI personalizes content delivery, adjusts question difficulty, and guides mastery in real time.",
                 },
                 {
-                  icon: <MessageCircle className="w-10 h-10" />,
                   title: "Conversational",
                   desc: "Learning happens through dialogue — Socratic questioning, not passive reading.",
                 },
@@ -299,9 +278,6 @@ export default function AITutorPage() {
                 >
                   <Card className="h-full text-center" hover="lift">
                     <CardContent className="p-8">
-                      <div className="w-16 h-16 bg-[var(--primary-100)] text-[var(--primary-500)] rounded-2xl flex items-center justify-center mx-auto mb-4">
-                        {item.icon}
-                      </div>
                       <h3 className="text-lg font-bold text-gray-900 mb-2">
                         {item.title}
                       </h3>
@@ -380,9 +356,6 @@ export default function AITutorPage() {
                 >
                   <Card className="h-full" hover="lift">
                     <CardContent className="p-6">
-                      <div className="w-14 h-14 bg-[var(--primary-100)] text-[var(--primary-500)] rounded-2xl flex items-center justify-center mb-4">
-                        {feature.icon}
-                      </div>
                       <h3 className="text-lg font-bold text-gray-900 mb-2">
                         {feature.title}
                       </h3>
@@ -425,9 +398,6 @@ export default function AITutorPage() {
                 >
                   <Card className="h-full" hover="lift">
                     <CardContent className="p-6">
-                      <div className="w-14 h-14 bg-[var(--secondary-100)] text-[var(--secondary-500)] rounded-2xl flex items-center justify-center mb-4">
-                        {feature.icon}
-                      </div>
                       <h3 className="text-lg font-bold text-gray-900 mb-2">
                         {feature.title}
                       </h3>

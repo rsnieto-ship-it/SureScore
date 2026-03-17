@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ArrowRight, CheckCircle, Clock, Users, TrendingUp, BookOpen } from "lucide-react";
+import { ArrowRight, CheckCircle } from "lucide-react";
 import { Header, Footer } from "@/components/layout";
 import { Container, Card, CardContent, Button } from "@/components/ui";
 import { CTA } from "@/components/sections";
@@ -90,22 +90,18 @@ export default function SATACTPrepPage() {
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
               {[
                 {
-                  icon: <BookOpen className="w-8 h-8" />,
                   title: "Expert Instruction",
                   description: "Learn from certified instructors with years of test prep experience.",
                 },
                 {
-                  icon: <TrendingUp className="w-8 h-8" />,
                   title: "Practice Tests",
                   description: "Full-length practice tests with detailed score analysis.",
                 },
                 {
-                  icon: <Users className="w-8 h-8" />,
                   title: "Small Classes",
                   description: "Personalized attention with optimal student-to-teacher ratios.",
                 },
                 {
-                  icon: <Clock className="w-8 h-8" />,
                   title: "Flexible Schedule",
                   description: "Multiple session times to fit your busy schedule.",
                 },
@@ -119,9 +115,6 @@ export default function SATACTPrepPage() {
                 >
                   <Card className="h-full" hover="lift">
                     <CardContent className="p-6 text-center">
-                      <div className="w-16 h-16 bg-[var(--primary-100)] text-[var(--primary-500)] rounded-2xl flex items-center justify-center mx-auto mb-4">
-                        {feature.icon}
-                      </div>
                       <h3 className="text-lg font-bold text-gray-900 mb-2">
                         {feature.title}
                       </h3>
