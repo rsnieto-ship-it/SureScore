@@ -96,7 +96,7 @@ export default function DigestReview({ digest }: { digest: Digest }) {
       const next = new Set(prev);
       if (next.has(id)) {
         next.delete(id);
-      } else if (next.size < 5) {
+      } else if (next.size < 6) {
         next.add(id);
       }
       return next;
@@ -124,8 +124,8 @@ export default function DigestReview({ digest }: { digest: Digest }) {
   }
 
   async function generateAndApprove() {
-    if (selected.size !== 5) {
-      setError("Select exactly 5 articles before generating");
+    if (selected.size < 5 || selected.size > 6) {
+      setError("Select 5 or 6 articles before generating");
       return;
     }
     setGenerating(true);
@@ -218,7 +218,7 @@ export default function DigestReview({ digest }: { digest: Digest }) {
       {isEditable && (
         <div className="mb-4 flex items-center justify-between">
           <p className="text-sm text-gray-600">
-            <span className="font-medium">{selected.size}/5</span> selected
+            <span className="font-medium">{selected.size}/6</span> selected
           </p>
           <div className="flex gap-2">
             <button
@@ -230,7 +230,7 @@ export default function DigestReview({ digest }: { digest: Digest }) {
             </button>
             <button
               onClick={generateAndApprove}
-              disabled={generating || selected.size !== 5}
+              disabled={generating || selected.size < 5 || selected.size > 6}
               className="flex items-center gap-2 rounded-md bg-amber-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-amber-700 disabled:opacity-50"
             >
               {generating ? (

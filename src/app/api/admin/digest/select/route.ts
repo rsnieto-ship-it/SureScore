@@ -11,9 +11,9 @@ export async function POST(request: Request) {
     );
   }
 
-  if (candidateIds.length > 5) {
+  if (candidateIds.length > 6) {
     return NextResponse.json(
-      { error: "Select at most 5 candidates" },
+      { error: "Select at most 6 candidates" },
       { status: 400 }
     );
   }
