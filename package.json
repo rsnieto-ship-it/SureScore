@@ -11,6 +11,7 @@
     "db:import": "tsx scripts/import-mailchimp.ts"
   },
   "dependencies": {
+    "@aws-sdk/client-ses": "^3.1012.0",
     "@hookform/resolvers": "^5.2.2",
     "@prisma/adapter-pg": "^7.4.1",
     "@prisma/client": "^7.4.1",

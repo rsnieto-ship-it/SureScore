@@ -140,3 +140,106 @@ model DigestSend {
   @@index([digestId])
   @@index([email])
 }
+
+// ── SES Email Infrastructure ──────────────────────────────────────
+
+model Unsubscription {
+  id        String   @id @default(cuid())
+  email     String
+  list      String
+  createdAt DateTime @default(now())
+
+  @@unique([email, list])
+  @@index([email])
+}
+
+model EmailTemplate {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  subject     String
+  htmlBody    String   @db.Text
+  senderAlias String   @default("info")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model ClientEmail {
+  id           String            @id @default(cuid())
+  subject      String
+  htmlBody     String            @db.Text
+  plainBody    String?           @db.Text
+  senderAlias  String            @default("info")
+  list         String            @default("product-updates")
+  templateId   String?
+  status       ClientEmailStatus @default(DRAFT)
+  targetTags   String[]
+  sentCount    Int               @default(0)
+  failCount    Int               @default(0)
+  scheduledFor DateTime?
+  sentAt       DateTime?
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+
+  sends ClientEmailSend[]
+}
+
+enum ClientEmailStatus {
+  DRAFT
+  SENDING
+  SENT
+  FAILED
+}
+
+model ClientEmailSend {
+  id            String   @id @default(cuid())
+  clientEmailId String
+  email         String
+  sentAt        DateTime @default(now())
+
+  clientEmail ClientEmail @relation(fields: [clientEmailId], references: [id], onDelete: Cascade)
+
+  @@unique([clientEmailId, email])
+  @@index([clientEmailId])
+  @@index([email])
+}
+
+model ClientEmailOpen {
+  id            String   @id @default(cuid())
+  email         String
+  clientEmailId String
+  openedAt      DateTime @default(now())
+
+  @@index([email])
+  @@index([clientEmailId])
+}
+
+model ClientEmailClick {
+  id            String   @id @default(cuid())
+  email         String
+  clientEmailId String
+  url           String
+  clickedAt     DateTime @default(now())
+
+  @@index([email])
+  @@index([clientEmailId])
+}
+
+model InboundEmail {
+  id          String   @id @default(cuid())
+  fromEmail   String
+  fromName    String?
+  toEmail     String
+  subject     String
+  bodyText    String?  @db.Text
+  bodyHtml    String?  @db.Text
+  category    String?
+  status      String   @default("new")
+  actions     String?  @db.Text
+  receivedAt  DateTime @default(now())
+  processedAt DateTime?
+
+  @@index([fromEmail])
+  @@index([toEmail])
+  @@index([category])
+  @@index([status])
+}
