@@ -1,0 +1,12 @@
+# SureScore Intel — Weekly Digest Crontab
+# ========================================
+# Install with: crontab crontab.txt
+#
+# Monday 7am: Generate 20 candidates, email to Roy & Elizabeth, save to PG
+0 7 * * 1   cd /Users/roynieto/projects/surescore_website/claude_stuff/surescore-digest/surescore-digest && source .env && python3 surescore_digest.py --preview >> cron.log 2>&1
+
+# Tuesday 9am: Send first 1,500 contacts
+0 9 * * 2   cd /Users/roynieto/projects/surescore_website/claude_stuff/surescore-digest/surescore-digest && source .env && python3 surescore_digest.py --send-all --batch-limit 1500 >> send_all.log 2>&1
+
+# Wednesday 9am: Send remaining contacts
+0 9 * * 3   cd /Users/roynieto/projects/surescore_website/claude_stuff/surescore-digest/surescore-digest && source .env && python3 surescore_digest.py --send-all >> send_all.log 2>&1

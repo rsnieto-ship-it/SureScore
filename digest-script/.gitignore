@@ -1,0 +1,9 @@
+.env
+*.log
+*.db
+*.html
+__pycache__/
+*.txt
+!requirements.txt
+!crontab.txt
+!SETUP.md
