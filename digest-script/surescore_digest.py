@@ -1624,20 +1624,64 @@ TAKE: [your funny SureScore Take]
 """
 
 
+SATIRE_HEADLINE_PROMPT = """You are a comedy writer for The Onion, writing headlines for a college admissions newsletter read by Texas school counselors and educators.
+
+Generate ONE original satirical headline about college admissions, testing, or helicopter parenting. Think Onion-style: deadpan, absurd, treats the ridiculous as normal.
+
+RULES:
+- One headline only, no quotes, no numbering
+- Clean humor — no sex, violence, politics, or anything offensive
+- Must feel fresh and timely — reference modern admissions culture (test-optional, legacy admissions, FAFSA delays, yield rates, admissions consultants, etc.)
+- Keep it under 120 characters
+
+AVOID these topics (already used):
+{used_headlines}
+
+Respond with ONLY the headline, nothing else."""
+
+
+def _get_used_satire_headlines(conn):
+    """Get all previously used satire headlines to avoid repeats."""
+    cur = conn.cursor()
+    cur.execute('SELECT headline FROM "SatireHeadline" WHERE "timesUsed" > 0 ORDER BY "lastUsedAt" DESC')
+    return [row[0] for row in cur.fetchall()]
+
+
 def generate_satire(conn):
-    """Pick the next satirical headline from the DB and generate the summary/take."""
-    print("😂 Generating satirical closer...")
+    """Generate a brand-new satirical headline via Claude, then write the summary/take."""
+    print("😂 Generating satirical opener...")
 
-    headline_id, headline = get_next_satire_headline(conn)
-    if not headline:
-        print("   ⚠️  No active satire headlines in the database")
-        return None
-
-    print(f"   📰 Using: {headline[:60]}...")
+    used = _get_used_satire_headlines(conn)
+    used_list = "\n".join(f"- {h}" for h in used) if used else "- (none yet)"
 
     try:
         client = Anthropic(api_key=ANTHROPIC_API_KEY)
 
+        # Step 1: Generate a fresh headline
+        def _make_headline_request():
+            return client.messages.create(
+                model="claude-sonnet-4-20250514",
+                max_tokens=150,
+                messages=[{
+                    "role": "user",
+                    "content": SATIRE_HEADLINE_PROMPT.format(used_headlines=used_list),
+                }]
+            )
+
+        msg = _call_with_retry(_make_headline_request)
+        headline = msg.content[0].text.strip().strip('"').strip("'")
+        print(f"   📰 New headline: {headline[:70]}...")
+
+        # Save to DB so it's tracked as used
+        headline_id = _generate_cuid()
+        cur = conn.cursor()
+        cur.execute(
+            'INSERT INTO "SatireHeadline" (id, headline, "timesUsed", "lastUsedAt") VALUES (%s, %s, 1, NOW()) ON CONFLICT (headline) DO UPDATE SET "timesUsed" = "SatireHeadline"."timesUsed" + 1, "lastUsedAt" = NOW()',
+            (headline_id, headline)
+        )
+        conn.commit()
+
+        # Step 2: Generate summary + take for the headline
         def _make_satire_request():
             return client.messages.create(
                 model="claude-sonnet-4-20250514",
@@ -1655,7 +1699,6 @@ def generate_satire(conn):
         take_match = re.search(r"TAKE:\s*(.+)", text, re.DOTALL)
 
         if summary_match and take_match:
-            mark_satire_used(conn, headline_id)
             story = {
                 "title": headline,
                 "summary": summary_match.group(1).strip(),
