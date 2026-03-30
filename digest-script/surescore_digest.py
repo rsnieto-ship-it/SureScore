@@ -3467,16 +3467,27 @@ def run_analytics_report(conn):
         pg.close()
         return
 
-    # Get top clicked links from last 30 days
+    # Get top clicked links from last 30 days WITH who clicked
     cur.execute("""
-        SELECT dc.url, COUNT(*) as clicks
+        SELECT dc.url, dc.email, dc."clickedAt",
+               c."firstName", c."lastName", c."districtName", c.title
         FROM "DigestClick" dc
+        LEFT JOIN "Contact" c ON c.email = dc.email
         WHERE dc."clickedAt" > NOW() - INTERVAL '30 days'
-        GROUP BY dc.url
-        ORDER BY clicks DESC
-        LIMIT 10
+        ORDER BY dc."clickedAt" DESC
     """)
-    top_links = [dict(r) for r in cur.fetchall()]
+    all_clicks = [dict(r) for r in cur.fetchall()]
+
+    # Group by URL
+    from collections import OrderedDict
+    clicks_by_url = OrderedDict()
+    for click in all_clicks:
+        url = click["url"]
+        if url not in clicks_by_url:
+            clicks_by_url[url] = []
+        clicks_by_url[url].append(click)
+    # Sort by click count descending
+    top_links = sorted(clicks_by_url.items(), key=lambda x: -len(x[1]))[:10]
 
     # Get today's activity for the most recent digest
     latest = digests[0]
@@ -3522,9 +3533,16 @@ def run_analytics_report(conn):
         </tr>"""
 
     links_html = ""
-    for link in top_links[:5]:
-        url_short = link["url"][:60] + "..." if len(link["url"]) > 60 else link["url"]
-        links_html += f'<li style="margin-bottom: 4px; font-size: 13px;">{url_short} — <strong>{link["clicks"]}</strong> clicks</li>'
+    for url, clickers in top_links[:5]:
+        url_short = url[:60] + "..." if len(url) > 60 else url
+        people_html = ""
+        for c in clickers[:10]:
+            name = f"{c.get('firstName') or ''} {c.get('lastName') or ''}".strip() or c["email"]
+            district = c.get("districtName") or ""
+            title = c.get("title") or ""
+            info = f" — {district}" if district else (f" — {title}" if title else "")
+            people_html += f'<div style="font-size: 12px; color: #666; margin-left: 16px;">{name}{info} ({c["email"]})</div>'
+        links_html += f'<li style="margin-bottom: 12px; font-size: 13px;"><strong>{url_short}</strong> — {len(clickers)} click{"s" if len(clickers) != 1 else ""}{people_html}</li>'
 
     latest_sends = latest["sends"] or 0
     latest_opens = latest["unique_opens"] or 0
@@ -3769,7 +3787,7 @@ def main():
             if url_pattern:
                 pgcur.execute("""
                     SELECT dc.email, dc.url, dc."clickedAt", c."firstName", c."lastName",
-                           c.district, c.role
+                           c."districtName", c.title
                     FROM "DigestClick" dc
                     LEFT JOIN "Contact" c ON c.email = dc.email
                     WHERE dc.url ILIKE %s
@@ -3778,7 +3796,7 @@ def main():
             else:
                 pgcur.execute("""
                     SELECT dc.email, dc.url, dc."clickedAt", c."firstName", c."lastName",
-                           c.district, c.role
+                           c."districtName", c.title
                     FROM "DigestClick" dc
                     LEFT JOIN "Contact" c ON c.email = dc.email
                     ORDER BY dc."clickedAt" DESC
@@ -3793,11 +3811,11 @@ def main():
                 print(f"   Found {len(rows)} clicks{f' matching \"{url_pattern}\"' if url_pattern else ''}:\n")
                 for r in rows:
                     name = f"{r.get('firstName') or ''} {r.get('lastName') or ''}".strip() or "Unknown"
-                    district = r.get("district") or ""
-                    role = r.get("role") or ""
+                    district = r.get("districtName") or ""
+                    title = r.get("title") or ""
                     when = r["clickedAt"].strftime("%b %d %I:%M%p") if r.get("clickedAt") else "—"
                     url_short = r["url"][:70]
-                    info = f"{district} / {role}" if district else role
+                    info = f"{district} / {title}" if district else title
                     print(f"   {name:<30s} {info:<35s} {when}")
                     print(f"     {r['email']}")
                     print(f"     → {url_short}")
