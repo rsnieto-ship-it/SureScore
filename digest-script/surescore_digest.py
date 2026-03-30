@@ -3650,6 +3650,8 @@ def main():
                        help="Show the current learned selection rubric (feature weights from history)")
     group.add_argument("--analytics", action="store_true",
                        help="Send daily analytics report (open rates, click rates) to Roy")
+    group.add_argument("--backfill-sends", type=str, metavar="DIGEST_ID",
+                       help="Backfill DigestSendLog for a digest that sent but wasn't logged")
     parser.add_argument("--batch-limit", type=int, metavar="N", default=0,
                         help="Cap the number of recipients per send run (0 = unlimited)")
     parser.add_argument("--send", action="store_true",
@@ -3733,6 +3735,27 @@ def main():
         show_rubric(conn)
     elif args.analytics:
         run_analytics_report(conn)
+    elif args.backfill_sends:
+        digest_id = args.backfill_sends
+        print(f"\n📝 BACKFILL — Logging sends for digest {digest_id}\n")
+        # Load all subscribed contacts
+        cur = conn.cursor()
+        cur.execute("SELECT email FROM \"Contact\" WHERE status = 'SUBSCRIBED'")
+        contacts = [row[0] for row in cur.fetchall()]
+        # Check how many already logged
+        cur.execute('SELECT COUNT(*) FROM "DigestSendLog" WHERE "digestId" = %s', (digest_id,))
+        existing = cur.fetchone()[0]
+        print(f"   {len(contacts)} subscribers, {existing} already logged")
+        if existing > 0:
+            print(f"   ⚠️  Already has {existing} entries. Skipping to avoid duplicates.")
+        else:
+            for email in contacts:
+                cur.execute(
+                    'INSERT INTO "DigestSendLog" (id, "digestId", email) VALUES (%s, %s, %s) ON CONFLICT ("digestId", email) DO NOTHING',
+                    (_generate_cuid(), digest_id, email)
+                )
+            conn.commit()
+            print(f"   ✅ Logged {len(contacts)} send records for digest {digest_id}")
     else:
         # Default: show help and suggest preview mode
         print("No mode specified. Available modes:\n")
