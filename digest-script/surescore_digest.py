@@ -502,7 +502,7 @@ def _build_unsubscribe_url(email_addr):
     return f"{SITE_URL}/api/unsubscribe?{params}"
 
 # Number of stories to fetch as candidates (Friday preview)
-MAX_STORIES = 20
+MAX_STORIES = 30
 # Number of stories in the final digest (Monday send)
 PUBLISH_COUNT = 5
 
