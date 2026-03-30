@@ -3429,6 +3429,200 @@ def run_generate(conn, pg_digest_id):
 
 
 # ============================================================
+# DAILY ANALYTICS REPORT
+# ============================================================
+
+def run_analytics_report(conn):
+    """Generate and email a daily digest analytics report to Roy."""
+    print("\n📊 ANALYTICS REPORT — Generating daily digest metrics\n")
+
+    pg = _get_pg_conn()
+    if not pg:
+        print("❌ Cannot connect to PostgreSQL for analytics.")
+        return
+
+    cur = pg.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+
+    # Get the last 5 digests with metrics
+    cur.execute("""
+        SELECT
+            d.id,
+            d."weekOf",
+            d.subject,
+            d.status,
+            d."createdAt",
+            COUNT(DISTINCT ds.email) as sends,
+            COUNT(DISTINCT do2.email) as unique_opens,
+            COUNT(do2.id) as total_opens,
+            COUNT(DISTINCT dc.id) as total_clicks,
+            COUNT(DISTINCT dc.email) as unique_clickers
+        FROM "Digest" d
+        LEFT JOIN "DigestSend" ds ON ds."digestId" = d.id
+        LEFT JOIN "DigestOpen" do2 ON do2."digestId" = d.id
+        LEFT JOIN "DigestClick" dc ON dc."digestId" = d.id
+        GROUP BY d.id, d."weekOf", d.subject, d.status, d."createdAt"
+        ORDER BY d."createdAt" DESC
+        LIMIT 5
+    """)
+    digests = [dict(r) for r in cur.fetchall()]
+
+    if not digests:
+        print("   No digests found.")
+        pg.close()
+        return
+
+    # Get top clicked links from last 30 days
+    cur.execute("""
+        SELECT dc.url, COUNT(*) as clicks
+        FROM "DigestClick" dc
+        WHERE dc."clickedAt" > NOW() - INTERVAL '30 days'
+        GROUP BY dc.url
+        ORDER BY clicks DESC
+        LIMIT 10
+    """)
+    top_links = [dict(r) for r in cur.fetchall()]
+
+    # Get today's activity for the most recent digest
+    latest = digests[0]
+    cur.execute("""
+        SELECT COUNT(DISTINCT email) as opens_today
+        FROM "DigestOpen"
+        WHERE "digestId" = %s AND "openedAt"::date = CURRENT_DATE
+    """, (latest["id"],))
+    today_opens = cur.fetchone()["opens_today"]
+
+    cur.execute("""
+        SELECT COUNT(*) as clicks_today
+        FROM "DigestClick"
+        WHERE "digestId" = %s AND "clickedAt"::date = CURRENT_DATE
+    """, (latest["id"],))
+    today_clicks = cur.fetchone()["clicks_today"]
+
+    pg.close()
+
+    # Build report
+    print(f"   Latest digest: {latest.get('subject', 'N/A')}")
+    print(f"   Sends: {latest['sends']}, Opens: {latest['unique_opens']}, Clicks: {latest['total_clicks']}")
+
+    # Build HTML email
+    today_str = datetime.now().strftime("%A, %B %d, %Y")
+
+    digest_rows = ""
+    for d in digests:
+        sends = d["sends"] or 0
+        opens = d["unique_opens"] or 0
+        clicks = d["total_clicks"] or 0
+        open_rate = f"{(opens / sends * 100):.1f}%" if sends > 0 else "—"
+        click_rate = f"{(clicks / sends * 100):.1f}%" if sends > 0 else "—"
+        week = d["weekOf"].strftime("%b %d") if d["weekOf"] else "—"
+        subj = (d["subject"] or "No subject")[:50]
+        digest_rows += f"""
+        <tr style="border-bottom: 1px solid #eee;">
+            <td style="padding: 8px; font-size: 13px;">{week}</td>
+            <td style="padding: 8px; font-size: 13px;">{subj}</td>
+            <td style="padding: 8px; text-align: center;">{sends:,}</td>
+            <td style="padding: 8px; text-align: center; font-weight: bold;">{open_rate}</td>
+            <td style="padding: 8px; text-align: center; font-weight: bold;">{click_rate}</td>
+        </tr>"""
+
+    links_html = ""
+    for link in top_links[:5]:
+        url_short = link["url"][:60] + "..." if len(link["url"]) > 60 else link["url"]
+        links_html += f'<li style="margin-bottom: 4px; font-size: 13px;">{url_short} — <strong>{link["clicks"]}</strong> clicks</li>'
+
+    latest_sends = latest["sends"] or 0
+    latest_opens = latest["unique_opens"] or 0
+    latest_clicks = latest["total_clicks"] or 0
+    latest_open_rate = f"{(latest_opens / latest_sends * 100):.1f}%" if latest_sends > 0 else "—"
+    latest_click_rate = f"{(latest_clicks / latest_sends * 100):.1f}%" if latest_sends > 0 else "—"
+
+    html = f"""
+    <html><body style="font-family: Arial, sans-serif; max-width: 650px; margin: 0 auto; color: #333;">
+    <h2 style="margin-bottom: 5px;">SureScore Intel — Daily Analytics</h2>
+    <p style="color: #888; margin-top: 0;">{today_str}</p>
+
+    <div style="background: #f0f7ff; border-radius: 8px; padding: 16px; margin-bottom: 20px;">
+        <h3 style="margin: 0 0 12px 0; font-size: 15px;">Latest Digest: {latest.get('subject', 'N/A')[:60]}</h3>
+        <table style="width: 100%;">
+            <tr>
+                <td style="text-align: center; padding: 8px;">
+                    <div style="font-size: 28px; font-weight: bold; color: #1a5276;">{latest_sends:,}</div>
+                    <div style="font-size: 12px; color: #888;">Sent</div>
+                </td>
+                <td style="text-align: center; padding: 8px;">
+                    <div style="font-size: 28px; font-weight: bold; color: #27ae60;">{latest_open_rate}</div>
+                    <div style="font-size: 12px; color: #888;">Open Rate</div>
+                </td>
+                <td style="text-align: center; padding: 8px;">
+                    <div style="font-size: 28px; font-weight: bold; color: #e67e22;">{latest_click_rate}</div>
+                    <div style="font-size: 12px; color: #888;">Click Rate</div>
+                </td>
+            </tr>
+            <tr>
+                <td style="text-align: center; padding: 4px;">
+                    <div style="font-size: 14px; color: #555;">{today_opens} opens today</div>
+                </td>
+                <td colspan="2" style="text-align: center; padding: 4px;">
+                    <div style="font-size: 14px; color: #555;">{today_clicks} clicks today</div>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <h3 style="font-size: 15px;">Last 5 Digests</h3>
+    <table style="width: 100%; border-collapse: collapse;">
+        <tr style="background: #f5f5f5;">
+            <th style="padding: 8px; text-align: left; font-size: 12px;">Week</th>
+            <th style="padding: 8px; text-align: left; font-size: 12px;">Subject</th>
+            <th style="padding: 8px; text-align: center; font-size: 12px;">Sent</th>
+            <th style="padding: 8px; text-align: center; font-size: 12px;">Open %</th>
+            <th style="padding: 8px; text-align: center; font-size: 12px;">Click %</th>
+        </tr>
+        {digest_rows}
+    </table>
+
+    <h3 style="font-size: 15px; margin-top: 20px;">Top Clicked Links (30 days)</h3>
+    <ol style="padding-left: 20px;">{links_html}</ol>
+
+    <hr style="margin-top: 24px; border: none; border-top: 1px solid #eee;">
+    <p style="color: #999; font-size: 11px;">Automated daily report from SureScore Intel digest system.</p>
+    </body></html>"""
+
+    # Send via SES
+    if not AWS_ACCESS_KEY_ID or not AWS_SECRET_ACCESS_KEY:
+        print("   ❌ AWS SES credentials not set.")
+        return
+
+    subject = f"Digest Analytics — {datetime.now().strftime('%b %d')}: {latest_open_rate} open, {latest_click_rate} click"
+
+    try:
+        ses_client = boto3.client(
+            "ses",
+            region_name=AWS_SES_REGION,
+            aws_access_key_id=AWS_ACCESS_KEY_ID,
+            aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
+        )
+        preview_recipients = [r.strip() for r in os.environ.get("DIGEST_RECIPIENTS", ROY_EMAIL).split(",") if r.strip()]
+        for recipient in preview_recipients:
+            msg = MIMEMultipart("alternative")
+            msg["Subject"] = subject
+            msg["From"] = SES_SENDER
+            msg["To"] = recipient
+            msg.attach(MIMEText(f"Open rate: {latest_open_rate}, Click rate: {latest_click_rate}", "plain"))
+            msg.attach(MIMEText(html, "html"))
+            ses_client.send_raw_email(
+                Source=SES_SENDER,
+                Destinations=[recipient],
+                RawMessage={"Data": msg.as_string()},
+            )
+            print(f"   ✅ Report sent to {recipient}")
+    except Exception as e:
+        print(f"   ❌ Failed to send report: {e}")
+
+    print(f"\n✅ Analytics report complete.\n")
+
+
+# ============================================================
 # MAIN
 # ============================================================
 
@@ -3457,6 +3651,8 @@ def main():
                        help="Auto-select top 5 candidates using learned rubric (fallback if no manual picks)")
     group.add_argument("--show-rubric", action="store_true",
                        help="Show the current learned selection rubric (feature weights from history)")
+    group.add_argument("--analytics", action="store_true",
+                       help="Send daily analytics report (open rates, click rates) to Roy")
     parser.add_argument("--batch-limit", type=int, metavar="N", default=0,
                         help="Cap the number of recipients per send run (0 = unlimited)")
     parser.add_argument("--send", action="store_true",
@@ -3538,6 +3734,8 @@ def main():
         run_auto_select(conn)
     elif args.show_rubric:
         show_rubric(conn)
+    elif args.analytics:
+        run_analytics_report(conn)
     else:
         # Default: show help and suggest preview mode
         print("No mode specified. Available modes:\n")

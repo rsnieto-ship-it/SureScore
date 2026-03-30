@@ -1,0 +1,40 @@
+name: "Digest — Daily Analytics Report"
+
+on:
+  schedule:
+    # Every day at 4:45 PM Central Time
+    # CDT (Mar-Nov) = UTC-5 → 21:45 UTC
+    # CST (Nov-Mar) = UTC-6 → 22:45 UTC
+    # Using 21:45 UTC = 4:45 PM CDT
+    - cron: "45 21 * * *"
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  analytics:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: digest-script
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Send analytics report
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_SES_REGION: ${{ secrets.AWS_SES_REGION }}
+          DIGEST_RECIPIENTS: ${{ secrets.DIGEST_RECIPIENTS }}
+          ROY_EMAIL: ${{ secrets.ROY_EMAIL }}
+          UNSUBSCRIBE_SECRET: ${{ secrets.UNSUBSCRIBE_SECRET }}
+          SITE_URL: ${{ secrets.SITE_URL }}
+        run: python surescore_digest.py --analytics
