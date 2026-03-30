@@ -1188,8 +1188,8 @@ def fetch_news():
     tier2_nat = [s for s in tier2 if not s.get("texas")]
     prioritized = tier1_tx + tier1_nat + tier2_tx + tier2_nat
 
-    tx_count = len(texas_stories)
-    nat_count = len(national_stories)
+    tx_count = len(tier1_tx) + len(tier2_tx)
+    nat_count = len(tier1_nat) + len(tier2_nat)
     print(f"✅ Found {len(prioritized)} relevant stories ({tx_count} Texas, {nat_count} national)\n")
     return prioritized[:MAX_STORIES]
 
