@@ -3542,7 +3542,7 @@ def run_analytics_report(conn):
     <p style="color: #888; margin-top: 0;">{today_str}</p>
 
     <div style="background: #f0f7ff; border-radius: 8px; padding: 16px; margin-bottom: 20px;">
-        <h3 style="margin: 0 0 12px 0; font-size: 15px;">Latest Digest: {latest.get('subject', 'N/A')[:60]}</h3>
+        <h3 style="margin: 0 0 12px 0; font-size: 15px;">Latest Digest: {(latest.get('subject') or 'N/A')[:60]}</h3>
         <table style="width: 100%;">
             <tr>
                 <td style="text-align: center; padding: 8px;">
@@ -3593,6 +3593,7 @@ def run_analytics_report(conn):
         print("   ❌ AWS SES credentials not set.")
         return
 
+    latest_subj = (latest.get("subject") or "N/A")[:40]
     subject = f"Digest Analytics — {datetime.now().strftime('%b %d')}: {latest_open_rate} open, {latest_click_rate} click"
 
     try:
