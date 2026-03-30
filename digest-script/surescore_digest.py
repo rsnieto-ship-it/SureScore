@@ -2566,7 +2566,7 @@ def run_preview(conn):
 
     # Send preview email to Roy
     _, candidates = load_latest_candidates(conn)
-    if candidates and GMAIL_APP_PASSWORD != "your-app-password-here":
+    if candidates and AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY:
         send_preview_email(candidates, monday_str)
     else:
         print("📧 Email not configured — preview printed above only.\n")
@@ -2632,7 +2632,7 @@ def run_select(conn, selection_str, auto_send=False):
     preview_path = save_preview(selected)
 
     # Send (auto-send if --send flag, otherwise prompt)
-    if GMAIL_APP_PASSWORD == "your-app-password-here":
+    if not AWS_ACCESS_KEY_ID or not AWS_SECRET_ACCESS_KEY:
         print("📧 Email not configured — preview saved above.")
         return
 
@@ -2701,7 +2701,7 @@ def run_auto(conn):
     save_preview(stories)
 
     # Send
-    if GMAIL_APP_PASSWORD == "your-app-password-here":
+    if not AWS_ACCESS_KEY_ID or not AWS_SECRET_ACCESS_KEY:
         print("📧 Email not configured yet — preview saved above.\n")
         return
 
@@ -2955,8 +2955,8 @@ def main():
         stories = load_digest_from_db(conn, digest_id)
         if not stories:
             print(f"❌ Digest #{digest_id} not found in database.")
-        elif GMAIL_APP_PASSWORD == "your-app-password-here":
-            print("📧 Email not configured — set GMAIL_APP_PASSWORD.\n")
+        elif not AWS_ACCESS_KEY_ID or not AWS_SECRET_ACCESS_KEY:
+            print("📧 Email not configured — set AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY.\n")
         else:
             # Load recipients from file or fall back to default list
             recipient_list = None
@@ -2972,8 +2972,8 @@ def main():
         stories = load_digest_from_db(conn, digest_id)
         if not stories:
             print(f"❌ Digest #{digest_id} not found in database.")
-        elif GMAIL_APP_PASSWORD == "your-app-password-here":
-            print("📧 Email not configured — set GMAIL_APP_PASSWORD.\n")
+        elif not AWS_ACCESS_KEY_ID or not AWS_SECRET_ACCESS_KEY:
+            print("📧 Email not configured — set AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY.\n")
         else:
             review_recipients = ["roy@surescore.com", "elizabeth@surescore.com"]
             print(f"   Sending to: {', '.join(review_recipients)}")
