@@ -2701,10 +2701,46 @@ def build_plaintext(stories):
 # STEP 4: SEND EMAIL
 # ============================================================
 
-def send_email(stories, recipients=None, digest_id=None, conn=None, pg_digest_id=None, batch_num=1):
+SEND_ALLOWED_DAYS = {1, 2}  # 0=Mon, 1=Tue, 2=Wed — only Tue/Wed
+MASS_SEND_THRESHOLD = 10    # More than this requires --send-all
+
+def _check_send_safeguards(recipients, force=False):
+    """Enforce send safeguards. Returns True if safe to proceed, False otherwise."""
+    today = datetime.now().weekday()  # 0=Mon, 1=Tue, 2=Wed, ...
+
+    # Guard 1: Day-of-week check for mass sends
+    if len(recipients) > MASS_SEND_THRESHOLD and today not in SEND_ALLOWED_DAYS:
+        day_names = {0: "Monday", 1: "Tuesday", 2: "Wednesday", 3: "Thursday",
+                     4: "Friday", 5: "Saturday", 6: "Sunday"}
+        if not force:
+            print(f"\n🚫 BLOCKED: Mass send to {len(recipients)} recipients on {day_names[today]}.")
+            print(f"   Mass sends are only allowed on Tuesday and Wednesday.")
+            print(f"   The digest has been saved. It will send automatically on Tuesday 9am CT.")
+            print(f"   To override, use --send-all --force\n")
+            return False
+
+    # Guard 2: Recipient threshold — refuse to mass-send unless via --send-all
+    if len(recipients) > MASS_SEND_THRESHOLD:
+        import inspect
+        caller = inspect.stack()[2].function  # caller of send_email
+        if caller not in ("_run_send_all",):
+            print(f"\n🚫 BLOCKED: Attempted to send to {len(recipients)} recipients outside of --send-all.")
+            print(f"   The --select command only saves the digest. Use --send-all for mass sends.")
+            print(f"   Called from: {caller}\n")
+            return False
+
+    return True
+
+
+def send_email(stories, recipients=None, digest_id=None, conn=None, pg_digest_id=None, batch_num=1, force=False):
     """Send the digest email via AWS SES (50k/day limit)."""
     if recipients is None:
         recipients = RECIPIENTS
+
+    # Enforce safeguards before sending
+    if not _check_send_safeguards(recipients, force=force):
+        return
+
     print("📧 Sending email digest via SES...")
 
     if not AWS_ACCESS_KEY_ID or not AWS_SECRET_ACCESS_KEY:
@@ -3103,19 +3139,11 @@ def run_select(conn, selection_str, auto_send=False):
     digest_id = save_digest_to_db(conn, selected, RECIPIENTS)
     print(f"📦 Saved to database as digest #{digest_id}")
 
-    if auto_send:
-        send_email(selected, digest_id=str(digest_id))
-    else:
-        print(f"\n✅ Digest #{digest_id} is ready. To send it:\n")
-        print(f"   python3 surescore_digest.py --send-digest {digest_id}\n")
-        print("Or send now:")
-        for r in RECIPIENTS:
-            print(f"   → {r}")
-        response = input("\nSend emails now? (y/n): ").strip().lower()
-        if response == "y":
-            send_email(selected, digest_id=str(digest_id))
-        else:
-            print("Skipped sending. You can review the preview file.\n")
+    # Send review copy to Roy + Elizabeth only (never mass-send from --select)
+    review_recipients = [r.strip() for r in os.environ.get("DIGEST_RECIPIENTS", ROY_EMAIL).split(",") if r.strip()]
+    send_email(selected, recipients=review_recipients, digest_id=str(digest_id))
+    print(f"\n✅ Review copy sent to {', '.join(review_recipients)}")
+    print(f"   Digest #{digest_id} is saved. Mass send happens automatically via --send-all on Tuesday 9am.\n")
 
 
 def run_check_reply(conn):
@@ -3173,7 +3201,7 @@ def run_auto(conn):
     print(f"📦 Saved to database as digest #{digest_id}")
 
 
-def _run_send_all(conn, batch_limit=0):
+def _run_send_all(conn, batch_limit=0, force=False):
     """Send the latest digest to all subscribed contacts, skipping already-sent.
 
     Safety checks:
@@ -3273,7 +3301,7 @@ def _run_send_all(conn, batch_limit=0):
             pg_update_digest_status(pg_digest_id, "SENDING_BATCH_2")
 
     send_email(stories, recipients=unsent, digest_id=str(digest_id), conn=conn,
-               pg_digest_id=pg_digest_id, batch_num=batch_num)
+               pg_digest_id=pg_digest_id, batch_num=batch_num, force=force)
 
     # Update PG status after send
     if pg_digest_id:
@@ -3389,7 +3417,9 @@ def main():
     parser.add_argument("--batch-limit", type=int, metavar="N", default=0,
                         help="Cap the number of recipients per send run (0 = unlimited)")
     parser.add_argument("--send", action="store_true",
-                        help="Auto-send without prompting (use with --select)")
+                        help="Send review copy to Roy+Elizabeth after selecting (use with --select)")
+    parser.add_argument("--force", action="store_true",
+                        help="Override day-of-week safeguard for --send-all")
     parser.add_argument("--recipients", type=str, metavar="FILE",
                         help="Send to emails listed in FILE (one per line), use with --send-digest")
     args = parser.parse_args()
@@ -3458,7 +3488,7 @@ def main():
             send_email(stories, recipients=review_recipients, digest_id=str(digest_id), conn=conn)
             print(f"\n✅ Review copy sent! Once approved, run: --send-all")
     elif args.send_all:
-        _run_send_all(conn, batch_limit=args.batch_limit)
+        _run_send_all(conn, batch_limit=args.batch_limit, force=args.force)
     elif args.generate:
         run_generate(conn, args.generate)
     elif args.auto_select:
