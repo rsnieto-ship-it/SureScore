@@ -1,0 +1,40 @@
+name: "Digest — Tuesday Auto-Select Fallback"
+
+on:
+  schedule:
+    # Tuesday 6:00 AM Central Time (12:00 UTC)
+    # Runs 3 hours before batch-1 send at 9am CT
+    # CDT (Mar-Nov) = UTC-5, CST (Nov-Mar) = UTC-6
+    # Using 11:00 UTC = 6:00 AM CDT / 5:00 AM CST
+    - cron: "0 11 * * 2"
+  workflow_dispatch: # Allow manual trigger from GitHub UI
+
+jobs:
+  auto-select:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: digest-script
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Auto-select if no manual picks
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_SES_REGION: ${{ secrets.AWS_SES_REGION }}
+          DIGEST_RECIPIENTS: ${{ secrets.DIGEST_RECIPIENTS }}
+          ROY_EMAIL: ${{ secrets.ROY_EMAIL }}
+          UNSUBSCRIBE_SECRET: ${{ secrets.UNSUBSCRIBE_SECRET }}
+          SITE_URL: ${{ secrets.SITE_URL }}
+        run: python surescore_digest.py --auto-select

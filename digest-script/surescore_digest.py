@@ -1763,6 +1763,343 @@ def mark_candidates_selected(conn, batch_date, positions):
 
 
 # ============================================================
+# RUBRIC — LEARNED SELECTION SCORING
+# ============================================================
+
+MIN_RUBRIC_BATCHES = 6  # Minimum weeks of history before trusting the rubric
+
+def compute_rubric(conn):
+    """Compute a selection rubric from historical CandidateStory data.
+
+    Analyzes which candidates Roy has selected vs. skipped across all batches
+    and returns selection rates by category, source, Texas flag, and position.
+    """
+    cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+
+    # Count distinct batches
+    cur.execute('SELECT COUNT(DISTINCT "batchDate") as cnt FROM "CandidateStory"')
+    batch_count = cur.fetchone()["cnt"]
+
+    # Get aggregated selection data
+    cur.execute("""
+        SELECT category, source, "isTexas" as is_texas, position,
+               selected, COUNT(*) as cnt
+        FROM "CandidateStory"
+        GROUP BY category, source, "isTexas", position, selected
+    """)
+    rows = [dict(r) for r in cur.fetchall()]
+
+    # Category selection rates
+    cat_total = {}
+    cat_selected = {}
+    for r in rows:
+        cat = r["category"]
+        cat_total[cat] = cat_total.get(cat, 0) + r["cnt"]
+        if r["selected"]:
+            cat_selected[cat] = cat_selected.get(cat, 0) + r["cnt"]
+    category_rates = {}
+    for cat in cat_total:
+        category_rates[cat] = cat_selected.get(cat, 0) / cat_total[cat]
+
+    # Source selection rates
+    src_total = {}
+    src_selected = {}
+    for r in rows:
+        src = r["source"]
+        src_total[src] = src_total.get(src, 0) + r["cnt"]
+        if r["selected"]:
+            src_selected[src] = src_selected.get(src, 0) + r["cnt"]
+    source_rates = {}
+    for src in src_total:
+        source_rates[src] = src_selected.get(src, 0) / src_total[src]
+
+    # Texas multiplier
+    tx_total = sum(r["cnt"] for r in rows if r["is_texas"])
+    tx_selected = sum(r["cnt"] for r in rows if r["is_texas"] and r["selected"])
+    ntx_total = sum(r["cnt"] for r in rows if not r["is_texas"])
+    ntx_selected = sum(r["cnt"] for r in rows if not r["is_texas"] and r["selected"])
+    tx_rate = tx_selected / tx_total if tx_total else 0.5
+    ntx_rate = ntx_selected / ntx_total if ntx_total else 0.5
+    texas_multiplier = tx_rate / ntx_rate if ntx_rate > 0 else 1.0
+
+    # Position bias (bucketed: 1-5, 6-10, 11-15, 16+)
+    def _bucket(pos):
+        if pos <= 5: return "1-5"
+        if pos <= 10: return "6-10"
+        if pos <= 15: return "11-15"
+        return "16+"
+    pos_total = {}
+    pos_selected = {}
+    for r in rows:
+        b = _bucket(r["position"])
+        pos_total[b] = pos_total.get(b, 0) + r["cnt"]
+        if r["selected"]:
+            pos_selected[b] = pos_selected.get(b, 0) + r["cnt"]
+    position_rates = {}
+    for b in pos_total:
+        position_rates[b] = pos_selected.get(b, 0) / pos_total[b]
+
+    total_all = sum(r["cnt"] for r in rows)
+    total_sel = sum(r["cnt"] for r in rows if r["selected"])
+    base_rate = total_sel / total_all if total_all else 0.17
+
+    return {
+        "category_rates": category_rates,
+        "source_rates": source_rates,
+        "texas_multiplier": texas_multiplier,
+        "tx_rate": tx_rate,
+        "ntx_rate": ntx_rate,
+        "position_rates": position_rates,
+        "batch_count": batch_count,
+        "base_rate": base_rate,
+    }
+
+
+def score_candidates(candidates, rubric):
+    """Score and rank candidates using the learned rubric.
+
+    Returns candidates sorted by score descending, each annotated with
+    _rubric_score (float) and _rubric_reasons (list of strings).
+    """
+    base = rubric["base_rate"] or 0.17
+
+    for c in candidates:
+        reasons = []
+        cat = c.get("category", "")
+        src = c.get("source", "")
+        is_tx = c.get("is_texas", False)
+        pos = c.get("position", 20)
+
+        # Category score
+        cat_rate = rubric["category_rates"].get(cat, base)
+        reasons.append(f"Category '{cat}' selected {cat_rate:.0%} of the time")
+
+        # Source score
+        src_rate = rubric["source_rates"].get(src, base)
+        reasons.append(f"Source '{src}' selected {src_rate:.0%} of the time")
+
+        # Texas score
+        if is_tx:
+            tx_score = rubric["tx_rate"]
+            reasons.append(f"Texas story (TX selected {tx_score:.0%} vs national {rubric['ntx_rate']:.0%})")
+        else:
+            tx_score = rubric["ntx_rate"]
+
+        # Position score
+        if pos <= 5: bucket = "1-5"
+        elif pos <= 10: bucket = "6-10"
+        elif pos <= 15: bucket = "11-15"
+        else: bucket = "16+"
+        pos_rate = rubric["position_rates"].get(bucket, base)
+        reasons.append(f"Position {pos} (bucket {bucket} selected {pos_rate:.0%})")
+
+        score = (0.40 * cat_rate) + (0.25 * src_rate) + (0.20 * tx_score) + (0.15 * pos_rate)
+        c["_rubric_score"] = round(score, 4)
+        c["_rubric_reasons"] = reasons
+
+    return sorted(candidates, key=lambda c: c["_rubric_score"], reverse=True)
+
+
+def show_rubric(conn):
+    """Pretty-print the current learned rubric for transparency."""
+    rubric = compute_rubric(conn)
+
+    print(f"\n{'=' * 60}")
+    print(f"  LEARNED SELECTION RUBRIC ({rubric['batch_count']} weeks of data)")
+    print(f"{'=' * 60}")
+
+    if rubric["batch_count"] < MIN_RUBRIC_BATCHES:
+        print(f"\n  ⚠️  Need {MIN_RUBRIC_BATCHES} weeks minimum, have {rubric['batch_count']}.")
+        print(f"     Auto-select will use default tier priority until then.\n")
+
+    print(f"\n  Base selection rate: {rubric['base_rate']:.0%}")
+
+    print(f"\n  Category selection rates:")
+    for cat, rate in sorted(rubric["category_rates"].items(), key=lambda x: -x[1]):
+        bar = "█" * int(rate * 20)
+        print(f"    {cat:<30s} {rate:>5.0%}  {bar}")
+
+    print(f"\n  Source preferences:")
+    for src, rate in sorted(rubric["source_rates"].items(), key=lambda x: -x[1]):
+        short = src[:40]
+        print(f"    {short:<40s} {rate:>5.0%}")
+
+    print(f"\n  Texas bias: {rubric['texas_multiplier']:.1f}x")
+    print(f"    Texas stories selected {rubric['tx_rate']:.0%} vs national {rubric['ntx_rate']:.0%}")
+
+    print(f"\n  Position bias:")
+    for bucket in ["1-5", "6-10", "11-15", "16+"]:
+        rate = rubric["position_rates"].get(bucket, 0)
+        print(f"    Positions {bucket:<5s}: {rate:.0%}")
+
+    print(f"\n{'=' * 60}\n")
+
+
+def send_auto_select_notification(selected_stories, rubric):
+    """Email Roy when auto-select fires, showing picks and rubric reasons."""
+    print("📧 Sending auto-select notification to Roy...")
+
+    subject = "SureScore Intel: Auto-selected articles (no manual picks received)"
+
+    # Build HTML
+    rows_html = ""
+    for i, s in enumerate(selected_stories):
+        tx = " [TX]" if s.get("texas") else ""
+        score = s.get("_rubric_score", 0)
+        reasons = s.get("_rubric_reasons", [])
+        reasons_html = "<br>".join(f"• {r}" for r in reasons[:3])
+        rows_html += f"""
+        <tr style="border-bottom: 1px solid #eee;">
+            <td style="padding: 12px; vertical-align: top; font-weight: bold;">{i+1}</td>
+            <td style="padding: 12px;">
+                <strong>{s['title']}{tx}</strong><br>
+                <span style="color: #666;">{s.get('category', '')} | {s.get('source', '')}</span><br>
+                <span style="color: #888; font-size: 13px;">Score: {score:.2f}</span><br>
+                <span style="color: #999; font-size: 12px;">{reasons_html}</span>
+            </td>
+        </tr>"""
+
+    html = f"""
+    <html><body style="font-family: Arial, sans-serif; max-width: 700px; margin: 0 auto;">
+    <h2 style="color: #333;">🤖 Auto-Selected Articles</h2>
+    <p>No manual picks were received by the deadline. The system auto-selected
+    these 5 articles using the learned rubric ({rubric['batch_count']} weeks of data).</p>
+    <p><strong>To override:</strong> Run <code>--select 1,3,7,12,15</code> before 9am CT.</p>
+    <table style="width: 100%; border-collapse: collapse;">{rows_html}</table>
+    <hr style="margin-top: 24px;">
+    <p style="color: #999; font-size: 12px;">Rubric weights: category 40%, source 25%,
+    Texas bias 20%, position 15%. Base selection rate: {rubric['base_rate']:.0%}.</p>
+    </body></html>"""
+
+    text_lines = ["AUTO-SELECTED ARTICLES (no manual picks received)", "=" * 50, ""]
+    for i, s in enumerate(selected_stories):
+        tx = " [TX]" if s.get("texas") else ""
+        text_lines.append(f"{i+1}. {s['title']}{tx}")
+        text_lines.append(f"   Score: {s.get('_rubric_score', 0):.2f}")
+        text_lines.append("")
+    text_lines.append("To override: run --select before 9am CT")
+    text_content = "\n".join(text_lines)
+
+    if not AWS_ACCESS_KEY_ID or not AWS_SECRET_ACCESS_KEY:
+        print("   ❌ AWS SES credentials not set. Cannot send notification.")
+        return
+
+    try:
+        ses_client = boto3.client(
+            "ses",
+            region_name=AWS_SES_REGION,
+            aws_access_key_id=AWS_ACCESS_KEY_ID,
+            aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
+        )
+        preview_recipients = [r.strip() for r in os.environ.get("DIGEST_RECIPIENTS", ROY_EMAIL).split(",") if r.strip()]
+        for recipient in preview_recipients:
+            msg = MIMEMultipart("alternative")
+            msg["Subject"] = subject
+            msg["From"] = SES_SENDER
+            msg["To"] = recipient
+            msg.attach(MIMEText(text_content, "plain"))
+            msg.attach(MIMEText(html, "html"))
+            ses_client.send_raw_email(
+                Source=SES_SENDER,
+                Destinations=[recipient],
+                RawMessage={"Data": msg.as_string()},
+            )
+            print(f"   ✅ Notification sent to {recipient}")
+    except Exception as e:
+        print(f"   ❌ Failed to send notification: {e}")
+
+
+def run_auto_select(conn):
+    """Auto-select top 5 candidates using the learned rubric.
+
+    This is the fallback that fires Tuesday 6am if Roy hasn't manually selected.
+    If selections already exist, it exits cleanly.
+    """
+    print("\n🤖 AUTO-SELECT MODE — Checking for manual picks\n")
+
+    batch_date, candidates = load_latest_candidates(conn)
+    if not candidates:
+        print("❌ No candidate batch found. Run --preview first.")
+        return
+
+    print(f"   Using batch from {batch_date} ({len(candidates)} candidates)")
+
+    # Check if manual selections already exist
+    already_selected = [c for c in candidates if c.get("selected")]
+    if already_selected:
+        print(f"\n✅ Manual selection found ({len(already_selected)} picks). Skipping auto-select.\n")
+        return
+
+    # Check if a digest already exists for this batch (Roy used --select)
+    cur = conn.cursor()
+    cur.execute('SELECT id, "sentAt" FROM "DigestHistory" ORDER BY "sentAt" DESC LIMIT 1')
+    row = cur.fetchone()
+    if row and row[1]:
+        age_days = (datetime.now() - row[1]).days
+        if age_days < 7:
+            print(f"\n✅ Recent digest #{row[0]} already exists. Skipping auto-select.\n")
+            return
+
+    # Compute rubric
+    rubric = compute_rubric(conn)
+    print(f"   Rubric computed from {rubric['batch_count']} weeks of data")
+
+    if rubric["batch_count"] < MIN_RUBRIC_BATCHES:
+        # Not enough data — fall back to position-based top 5 (existing tier priority)
+        print(f"   ⚠️  Only {rubric['batch_count']} weeks (need {MIN_RUBRIC_BATCHES}). Using default priority.\n")
+        top5 = candidates[:5]
+    else:
+        # Score and rank
+        scored = score_candidates(candidates, rubric)
+        top5 = scored[:5]
+        print(f"\n   📊 Top 5 by rubric score:")
+        for c in top5:
+            tx = " [TX]" if c.get("is_texas") else ""
+            print(f"      #{c['position']:2d} ({c['_rubric_score']:.3f}) {c['title'][:65]}{tx}")
+        print()
+
+    # Mark as selected
+    positions = [c["position"] for c in top5]
+    mark_candidates_selected(conn, batch_date, positions)
+    print(f"   ✅ Marked positions {positions} as selected")
+
+    # Build story dicts for generation pipeline
+    selected = []
+    for c in top5:
+        selected.append({
+            "title": c["title"],
+            "summary": c["summary"],
+            "link": c["link"],
+            "source": c["source"],
+            "category": c["category"],
+            "published": c["published"],
+            "texas": bool(c["is_texas"]),
+            "_rubric_score": c.get("_rubric_score", 0),
+            "_rubric_reasons": c.get("_rubric_reasons", []),
+        })
+
+    # Generate takes
+    selected = generate_takes(selected)
+    if not selected:
+        print("⚠️  No stories survived take generation.\n")
+        return
+
+    # Generate satirical opener
+    satire = generate_satire(conn)
+    if satire:
+        selected.insert(0, satire)
+
+    # Save to DB
+    digest_id = save_digest_to_db(conn, selected, RECIPIENTS)
+    print(f"📦 Auto-select digest saved as #{digest_id}")
+
+    # Notify Roy
+    send_auto_select_notification(top5, rubric)
+
+    print(f"\n✅ Auto-select complete. Digest #{digest_id} ready for --send-all at 9am.\n")
+
+
+# ============================================================
 # STEP 3: BUILD EMAIL
 # ============================================================
 
@@ -3045,6 +3382,10 @@ def main():
                        help="Add an article URL to the latest candidate batch")
     group.add_argument("--generate", type=str, metavar="DIGEST_ID",
                        help="Generate Claude takes + HTML for selected candidates in a PG digest")
+    group.add_argument("--auto-select", action="store_true",
+                       help="Auto-select top 5 candidates using learned rubric (fallback if no manual picks)")
+    group.add_argument("--show-rubric", action="store_true",
+                       help="Show the current learned selection rubric (feature weights from history)")
     parser.add_argument("--batch-limit", type=int, metavar="N", default=0,
                         help="Cap the number of recipients per send run (0 = unlimited)")
     parser.add_argument("--send", action="store_true",
@@ -3120,6 +3461,10 @@ def main():
         _run_send_all(conn, batch_limit=args.batch_limit)
     elif args.generate:
         run_generate(conn, args.generate)
+    elif args.auto_select:
+        run_auto_select(conn)
+    elif args.show_rubric:
+        show_rubric(conn)
     else:
         # Default: show help and suggest preview mode
         print("No mode specified. Available modes:\n")
@@ -3129,6 +3474,8 @@ def main():
         print("  --add URL          Add an article URL to the latest candidate batch")
         print("  --send-digest ID   Send a saved digest (no API calls)")
         print("  --send-all         Send latest digest to all contacts (resumes across days)")
+        print("  --auto-select      Auto-select top 5 using learned rubric (fallback)")
+        print("  --show-rubric      Show learned selection rubric")
         print("  --auto             Legacy: fully automated\n")
         print("Try: python surescore_digest.py --preview\n")
 
