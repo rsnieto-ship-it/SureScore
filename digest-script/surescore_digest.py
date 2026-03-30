@@ -3652,6 +3652,8 @@ def main():
                        help="Send daily analytics report (open rates, click rates) to Roy")
     group.add_argument("--backfill-sends", type=str, metavar="DIGEST_ID",
                        help="Backfill DigestSendLog for a digest that sent but wasn't logged")
+    group.add_argument("--clicks", type=str, metavar="URL_PATTERN", nargs="?", const="",
+                       help="Show who clicked a URL (partial match). No arg = show all clicks.")
     parser.add_argument("--batch-limit", type=int, metavar="N", default=0,
                         help="Cap the number of recipients per send run (0 = unlimited)")
     parser.add_argument("--send", action="store_true",
@@ -3756,6 +3758,50 @@ def main():
                 )
             conn.commit()
             print(f"   ✅ Logged {len(contacts)} send records for digest {digest_id}")
+    elif args.clicks is not None:
+        print(f"\n🔗 CLICK REPORT\n")
+        pg = _get_pg_conn()
+        if not pg:
+            print("❌ Cannot connect to PostgreSQL.")
+        else:
+            pgcur = pg.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+            url_pattern = args.clicks
+            if url_pattern:
+                pgcur.execute("""
+                    SELECT dc.email, dc.url, dc."clickedAt", c."firstName", c."lastName",
+                           c.district, c.role
+                    FROM "DigestClick" dc
+                    LEFT JOIN "Contact" c ON c.email = dc.email
+                    WHERE dc.url ILIKE %s
+                    ORDER BY dc."clickedAt" DESC
+                """, (f"%{url_pattern}%",))
+            else:
+                pgcur.execute("""
+                    SELECT dc.email, dc.url, dc."clickedAt", c."firstName", c."lastName",
+                           c.district, c.role
+                    FROM "DigestClick" dc
+                    LEFT JOIN "Contact" c ON c.email = dc.email
+                    ORDER BY dc."clickedAt" DESC
+                    LIMIT 50
+                """)
+            rows = [dict(r) for r in pgcur.fetchall()]
+            pg.close()
+
+            if not rows:
+                print(f"   No clicks found{f' matching \"{url_pattern}\"' if url_pattern else ''}.")
+            else:
+                print(f"   Found {len(rows)} clicks{f' matching \"{url_pattern}\"' if url_pattern else ''}:\n")
+                for r in rows:
+                    name = f"{r.get('firstName') or ''} {r.get('lastName') or ''}".strip() or "Unknown"
+                    district = r.get("district") or ""
+                    role = r.get("role") or ""
+                    when = r["clickedAt"].strftime("%b %d %I:%M%p") if r.get("clickedAt") else "—"
+                    url_short = r["url"][:70]
+                    info = f"{district} / {role}" if district else role
+                    print(f"   {name:<30s} {info:<35s} {when}")
+                    print(f"     {r['email']}")
+                    print(f"     → {url_short}")
+                    print()
     else:
         # Default: show help and suggest preview mode
         print("No mode specified. Available modes:\n")
