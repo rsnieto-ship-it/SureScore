@@ -462,7 +462,7 @@ GMAIL_APP_PASSWORD = os.environ.get("GMAIL_APP_PASSWORD", "your-app-password-her
 AWS_ACCESS_KEY_ID = os.environ.get("AWS_ACCESS_KEY_ID")
 AWS_SECRET_ACCESS_KEY = os.environ.get("AWS_SECRET_ACCESS_KEY")
 AWS_SES_REGION = os.environ.get("AWS_SES_REGION", "us-east-1")
-SES_SENDER = f"SureScore Intel <{GMAIL_ADDRESS}>"
+SES_SENDER = os.environ.get("SES_SENDER", "SureScore Intel <info@surescore.com>")
 
 # Recipients — from Postgres if DATABASE_URL is set, else fall back to env var
 def _load_recipients():
@@ -2347,21 +2347,38 @@ def send_preview_email(candidates, monday_date_str):
     text_lines.append("Reply with your 5 picks (e.g., '1, 3, 7, 12, 15') by Sunday night.")
     text_content = "\n".join(text_lines)
 
+    if not AWS_ACCESS_KEY_ID or not AWS_SECRET_ACCESS_KEY:
+        print("❌ AWS SES credentials not set. Cannot send preview email.")
+        return
+
     try:
-        msg = MIMEMultipart("alternative")
-        msg["Subject"] = subject
-        msg["From"] = f"SureScore Intel <{GMAIL_ADDRESS}>"
-        msg["To"] = ROY_EMAIL
+        ses_client = boto3.client(
+            "ses",
+            region_name=AWS_SES_REGION,
+            aws_access_key_id=AWS_ACCESS_KEY_ID,
+            aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
+        )
 
-        msg.attach(MIMEText(text_content, "plain"))
-        msg.attach(MIMEText(html_content, "html"))
+        preview_recipients = [r.strip() for r in os.environ.get("DIGEST_RECIPIENTS", ROY_EMAIL).split(",") if r.strip()]
 
-        context = ssl.create_default_context()
-        with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=context) as server:
-            server.login(GMAIL_ADDRESS, GMAIL_APP_PASSWORD)
-            server.sendmail(GMAIL_ADDRESS, ROY_EMAIL, msg.as_string())
+        for recipient in preview_recipients:
+            msg = MIMEMultipart("alternative")
+            msg["Subject"] = subject
+            msg["From"] = SES_SENDER
+            msg["To"] = recipient
 
-        print(f"   ✅ Preview sent to {ROY_EMAIL}")
+            msg.attach(MIMEText(text_content, "plain"))
+            msg.attach(MIMEText(html_content, "html"))
+
+            ses_client.send_raw_email(
+                Source=SES_SENDER,
+                Destinations=[recipient],
+                RawMessage={"Data": msg.as_string()},
+            )
+            print(f"   ✅ Preview sent to {recipient}")
+
+    except ClientError as e:
+        print(f"   ❌ Failed to send preview: {e.response['Error']['Message']}")
     except Exception as e:
         print(f"   ❌ Failed to send preview: {e}")
 
