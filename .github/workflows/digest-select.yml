@@ -36,4 +36,4 @@ jobs:
           ROY_EMAIL: ${{ secrets.ROY_EMAIL }}
           UNSUBSCRIBE_SECRET: ${{ secrets.UNSUBSCRIBE_SECRET }}
           SITE_URL: ${{ secrets.SITE_URL }}
-        run: python surescore_digest.py --select "${{ github.event.inputs.picks }}" --send
+        run: python surescore_digest.py --select "${{ github.event.inputs.picks }}"
