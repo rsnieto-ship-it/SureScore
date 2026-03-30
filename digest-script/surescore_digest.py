@@ -3444,24 +3444,20 @@ def run_analytics_report(conn):
     cur = pg.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
     # Get the last 5 digests with metrics
+    # Uses DigestHistory (legacy) because tracking URLs embed DigestHistory IDs
     cur.execute("""
         SELECT
-            d.id,
-            d."weekOf",
-            d.subject,
-            d.status,
-            d."createdAt",
-            COUNT(DISTINCT ds.email) as sends,
-            COUNT(DISTINCT do2.email) as unique_opens,
-            COUNT(do2.id) as total_opens,
-            COUNT(DISTINCT dc.id) as total_clicks,
-            COUNT(DISTINCT dc.email) as unique_clickers
-        FROM "Digest" d
-        LEFT JOIN "DigestSend" ds ON ds."digestId" = d.id
-        LEFT JOIN "DigestOpen" do2 ON do2."digestId" = d.id
-        LEFT JOIN "DigestClick" dc ON dc."digestId" = d.id
-        GROUP BY d.id, d."weekOf", d.subject, d.status, d."createdAt"
-        ORDER BY d."createdAt" DESC
+            dh.id,
+            dh."sentAt",
+            dh."storyCount",
+            (SELECT ds.title FROM "DigestStory" ds WHERE ds."digestId" = dh.id AND ds."isSatire" = false ORDER BY ds.position LIMIT 1) as first_title,
+            (SELECT COUNT(DISTINCT sl.email) FROM "DigestSendLog" sl WHERE sl."digestId" = dh.id) as sends,
+            (SELECT COUNT(DISTINCT do2.email) FROM "DigestOpen" do2 WHERE do2."digestId" = dh.id) as unique_opens,
+            (SELECT COUNT(*) FROM "DigestOpen" do2 WHERE do2."digestId" = dh.id) as total_opens,
+            (SELECT COUNT(*) FROM "DigestClick" dc WHERE dc."digestId" = dh.id) as total_clicks,
+            (SELECT COUNT(DISTINCT dc.email) FROM "DigestClick" dc WHERE dc."digestId" = dh.id) as unique_clickers
+        FROM "DigestHistory" dh
+        ORDER BY dh."sentAt" DESC NULLS LAST
         LIMIT 5
     """)
     digests = [dict(r) for r in cur.fetchall()]
@@ -3501,7 +3497,7 @@ def run_analytics_report(conn):
     pg.close()
 
     # Build report
-    print(f"   Latest digest: {latest.get('subject', 'N/A')}")
+    print(f"   Latest digest: {latest.get('first_title', 'N/A')}")
     print(f"   Sends: {latest['sends']}, Opens: {latest['unique_opens']}, Clicks: {latest['total_clicks']}")
 
     # Build HTML email
@@ -3514,8 +3510,8 @@ def run_analytics_report(conn):
         clicks = d["total_clicks"] or 0
         open_rate = f"{(opens / sends * 100):.1f}%" if sends > 0 else "—"
         click_rate = f"{(clicks / sends * 100):.1f}%" if sends > 0 else "—"
-        week = d["weekOf"].strftime("%b %d") if d["weekOf"] else "—"
-        subj = (d["subject"] or "No subject")[:50]
+        week = d["sentAt"].strftime("%b %d") if d.get("sentAt") else "—"
+        subj = (d.get("first_title") or "No title")[:50]
         digest_rows += f"""
         <tr style="border-bottom: 1px solid #eee;">
             <td style="padding: 8px; font-size: 13px;">{week}</td>
@@ -3542,7 +3538,7 @@ def run_analytics_report(conn):
     <p style="color: #888; margin-top: 0;">{today_str}</p>
 
     <div style="background: #f0f7ff; border-radius: 8px; padding: 16px; margin-bottom: 20px;">
-        <h3 style="margin: 0 0 12px 0; font-size: 15px;">Latest Digest: {(latest.get('subject') or 'N/A')[:60]}</h3>
+        <h3 style="margin: 0 0 12px 0; font-size: 15px;">Latest Digest: {(latest.get('first_title') or 'N/A')[:60]}</h3>
         <table style="width: 100%;">
             <tr>
                 <td style="text-align: center; padding: 8px;">
