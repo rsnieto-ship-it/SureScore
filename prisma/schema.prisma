@@ -141,6 +141,79 @@ model DigestSend {
   @@index([email])
 }
 
+// ── Digest Internal Tables (migrated from SQLite) ─────────────────
+
+model SatireHeadline {
+  id         String    @id @default(cuid())
+  headline   String    @unique
+  createdAt  DateTime  @default(now())
+  lastUsedAt DateTime?
+  timesUsed  Int       @default(0)
+  active     Boolean   @default(true)
+}
+
+model DigestHistory {
+  id               String        @id @default(cuid())
+  sentAt           DateTime      @default(now())
+  recipients       String?       @db.Text
+  storyCount       Int?
+  satireHeadlineId String?
+  stories          DigestStory[]
+  digestSendLogs   DigestSendLog[]
+}
+
+model DigestStory {
+  id        String  @id @default(cuid())
+  digestId  String
+  position  Int?
+  title     String? @db.Text
+  summary   String? @db.Text
+  source    String?
+  category  String?
+  link      String? @db.Text
+  take      String? @db.Text
+  published String?
+  isTexas   Boolean @default(false)
+  isSatire  Boolean @default(false)
+  bullets   String? @db.Text
+  synopsis  String? @db.Text
+  highlights String? @db.Text
+  relevance String? @db.Text
+
+  digest DigestHistory @relation(fields: [digestId], references: [id], onDelete: Cascade)
+
+  @@index([digestId])
+}
+
+model CandidateStory {
+  id        String  @id @default(cuid())
+  batchDate String
+  position  Int
+  title     String? @db.Text
+  summary   String? @db.Text
+  source    String?
+  category  String?
+  link      String? @db.Text
+  published String?
+  isTexas   Boolean @default(false)
+  selected  Boolean @default(false)
+  manual    Boolean @default(false)
+
+  @@index([batchDate])
+}
+
+model DigestSendLog {
+  id       String   @id @default(cuid())
+  digestId String
+  email    String
+  sentAt   DateTime @default(now())
+
+  digest DigestHistory @relation(fields: [digestId], references: [id], onDelete: Cascade)
+
+  @@unique([digestId, email])
+  @@index([digestId])
+}
+
 // ── SES Email Infrastructure ──────────────────────────────────────
 
 model Unsubscription {

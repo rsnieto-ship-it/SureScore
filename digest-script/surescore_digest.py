@@ -1269,6 +1269,93 @@ def fetch_article_text(url, timeout=10):
     return None
 
 
+def add_article_to_batch(conn, url):
+    """Add a manually-provided article URL to the latest candidate batch.
+
+    Fetches the page to extract title, summary, source, and Texas relevance.
+    Appends it as the next position in today's (or latest) batch.
+    """
+    from urllib.parse import urlparse
+
+    print(f"   🔗 Fetching: {url}")
+    try:
+        resp = requests.get(url, timeout=15, allow_redirects=True, headers={
+            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"
+        })
+        resp.raise_for_status()
+        html = resp.text
+    except Exception as e:
+        print(f"   ❌ Could not fetch URL: {e}")
+        return False
+
+    from bs4 import BeautifulSoup
+    soup = BeautifulSoup(html, "html.parser")
+
+    # Extract title: og:title > <title> tag > fallback
+    og_title = soup.find("meta", property="og:title")
+    title = (og_title["content"] if og_title and og_title.get("content")
+             else (soup.title.string.strip() if soup.title and soup.title.string else ""))
+
+    # Extract summary: og:description > meta description > first paragraph
+    og_desc = soup.find("meta", property="og:description")
+    meta_desc = soup.find("meta", attrs={"name": "description"})
+    if og_desc and og_desc.get("content"):
+        summary = og_desc["content"]
+    elif meta_desc and meta_desc.get("content"):
+        summary = meta_desc["content"]
+    else:
+        # Find the first substantial paragraph (skip nav/boilerplate)
+        summary = ""
+        for p in soup.find_all("p"):
+            text = p.get_text(strip=True)
+            if len(text) > 80 and not text.upper().startswith("SUBSCRIBE"):
+                summary = text[:300]
+                break
+
+    # Derive source from domain
+    domain = urlparse(url).netloc.replace("www.", "")
+    source = domain
+
+    # Detect Texas relevance from title + summary
+    texas_keywords = ["texas", "tia ", "tea ", "tsia", "uil", " tx ", "lone star",
+                      "houston", "dallas", "austin", "san antonio", "fort worth"]
+    combined = (title + " " + summary).lower()
+    is_texas = any(kw in combined for kw in texas_keywords)
+
+    if not title:
+        print("   ❌ Could not extract a title from the page.")
+        return False
+
+    # Find the latest batch and next position
+    cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    cur.execute('SELECT DISTINCT "batchDate" FROM "CandidateStory" ORDER BY "batchDate" DESC LIMIT 1')
+    row = cur.fetchone()
+    batch_date = row["batchDate"] if row else datetime.now().strftime("%Y-%m-%d")
+
+    cur.execute('SELECT COALESCE(MAX(position), 0) + 1 as next_pos FROM "CandidateStory" WHERE "batchDate" = %s',
+                (batch_date,))
+    next_pos = cur.fetchone()["next_pos"]
+
+    cur.execute("""
+        INSERT INTO "CandidateStory"
+        (id, "batchDate", position, title, summary, source, category, link, published, "isTexas", selected, manual)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, false, true)
+    """, (
+        _generate_cuid(), batch_date, next_pos,
+        title, summary, source, "Manual Add", url,
+        datetime.now().strftime("%Y-%m-%d"), is_texas
+    ))
+    conn.commit()
+
+    flag = "🤠 Texas" if is_texas else "🌐 National"
+    print(f"\n   ✅ Added as candidate #{next_pos} in batch {batch_date}")
+    print(f"   📰 {title}")
+    print(f"   📝 {summary[:120]}...")
+    print(f"   🏷️  {flag} | Source: {source}")
+    print(f"\n   When ready, include it with: --select ...,{next_pos}\n")
+    return True
+
+
 REFUSAL_PHRASES = [
     # Model says it can't write a take
     "don't have enough", "not enough information", "can't write a meaningful",
@@ -1597,26 +1684,50 @@ def generate_satire(conn):
 def save_candidates(conn, stories):
     """Save candidate stories to PostgreSQL for the Monday preview.
 
-    Clears unselected candidates from today's batch to allow safe re-runs.
+    Clears unselected auto-fetched candidates from today's batch to allow safe re-runs.
+    Preserves manually-added candidates (manual = true).
     """
     batch_date = datetime.now().strftime("%Y-%m-%d")
-    cur = conn.cursor()
+    cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+
+    # Only delete auto-fetched (non-manual) unselected candidates
     cur.execute(
-        'DELETE FROM "CandidateStory" WHERE "batchDate" = %s AND selected = false',
+        'DELETE FROM "CandidateStory" WHERE "batchDate" = %s AND selected = false AND manual = false',
         (batch_date,)
     )
-    for i, story in enumerate(stories):
+
+    # Collect URLs of manual candidates to avoid duplicates
+    cur.execute(
+        'SELECT link FROM "CandidateStory" WHERE "batchDate" = %s AND manual = true',
+        (batch_date,)
+    )
+    manual_urls = {row["link"] for row in cur.fetchall()}
+
+    for story in stories:
+        # Skip auto-fetched stories that duplicate a manually-added article
+        if story.get("link", "") in manual_urls:
+            continue
         cur.execute("""
             INSERT INTO "CandidateStory"
-            (id, "batchDate", position, title, summary, source, category, link, published, "isTexas", selected)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, false)
+            (id, "batchDate", position, title, summary, source, category, link, published, "isTexas", selected, manual)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, false, false)
         """, (
-            _generate_cuid(), batch_date, i + 1,
+            _generate_cuid(), batch_date, 0,
             story.get("title", ""), story.get("summary", ""),
             story.get("source", ""), story.get("category", ""),
             story.get("link", ""), story.get("published", ""),
             bool(story.get("texas")),
         ))
+
+    # Renumber all positions: manual candidates first, then auto-fetched
+    cur.execute("""
+        SELECT id, manual FROM "CandidateStory"
+        WHERE "batchDate" = %s AND selected = false
+        ORDER BY manual DESC, position ASC
+    """, (batch_date,))
+    for pos, row in enumerate(cur.fetchall(), start=1):
+        cur.execute('UPDATE "CandidateStory" SET position = %s WHERE id = %s', (pos, row["id"]))
+
     conn.commit()
     return batch_date
 
@@ -2930,6 +3041,8 @@ def main():
                        help="Send a saved digest to Roy + Elizabeth only for approval")
     group.add_argument("--send-all", action="store_true",
                        help="Send latest digest to all subscribed contacts (resumes across days)")
+    group.add_argument("--add", type=str, metavar="URL",
+                       help="Add an article URL to the latest candidate batch")
     group.add_argument("--generate", type=str, metavar="DIGEST_ID",
                        help="Generate Claude takes + HTML for selected candidates in a PG digest")
     parser.add_argument("--batch-limit", type=int, metavar="N", default=0,
@@ -2943,6 +3056,14 @@ def main():
     print("\n" + "=" * 50)
     print("  SURESCORE INTEL — WEEKLY DIGEST GENERATOR")
     print("=" * 50 + "\n")
+
+    # --add doesn't need Claude API, handle it early
+    if args.add:
+        conn = init_db()
+        print("📎 ADD ARTICLE MODE\n")
+        add_article_to_batch(conn, args.add)
+        conn.close()
+        return
 
     # Validate configuration
     if ANTHROPIC_API_KEY == "your-api-key-here":
@@ -3005,6 +3126,7 @@ def main():
         print("  --preview          Friday: fetch 20 candidates, email Roy")
         print("  --check-reply      Monday: parse Roy's reply, generate + send")
         print("  --select N,N,N     Manual: pick by number, generate takes, save")
+        print("  --add URL          Add an article URL to the latest candidate batch")
         print("  --send-digest ID   Send a saved digest (no API calls)")
         print("  --send-all         Send latest digest to all contacts (resumes across days)")
         print("  --auto             Legacy: fully automated\n")
