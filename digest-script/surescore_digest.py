@@ -1168,10 +1168,25 @@ def fetch_news():
 
     unique_stories = final_stories
 
-    # Prioritize Texas stories first, then national
-    texas_stories = [s for s in unique_stories if s.get("texas")]
-    national_stories = [s for s in unique_stories if not s.get("texas")]
-    prioritized = texas_stories + national_stories
+    # Priority tiers — admissions, financial aid, and TIA first, then everything else
+    TIER_1_CATEGORIES = {
+        "TEXAS TIA", "TEXAS ADMISSIONS", "TEXAS TESTING", "TEXAS ENROLLMENT",
+        "TEXAS HIGHER ED", "THECB", "TEXAS CCMR", "TX DUAL ENROLLMENT",
+        "TX DUAL CREDIT", "TEXAS STATE UNIV", "TX COMMUNITY COLLEGE",
+        "TX PRIVATE UNIV", "ADMISSIONS", "TESTING", "ADMISSIONS POLICY",
+        "FINANCIAL AID", "SCHOLARSHIPS", "ENROLLMENT", "HIGHER ED",
+        "EDUCATION POLICY", "IVY LEAGUE", "SELECTIVE ADMISSIONS",
+        "BOARDING SCHOOLS",
+    }
+    tier1 = [s for s in unique_stories if s.get("category") in TIER_1_CATEGORIES]
+    tier2 = [s for s in unique_stories if s.get("category") not in TIER_1_CATEGORIES]
+
+    # Within each tier, Texas stories first
+    tier1_tx = [s for s in tier1 if s.get("texas")]
+    tier1_nat = [s for s in tier1 if not s.get("texas")]
+    tier2_tx = [s for s in tier2 if s.get("texas")]
+    tier2_nat = [s for s in tier2 if not s.get("texas")]
+    prioritized = tier1_tx + tier1_nat + tier2_tx + tier2_nat
 
     tx_count = len(texas_stories)
     nat_count = len(national_stories)
