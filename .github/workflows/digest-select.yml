@@ -1,0 +1,39 @@
+name: "Digest — Select Articles"
+
+on:
+  workflow_dispatch:
+    inputs:
+      picks:
+        description: "Article numbers (e.g., 1,4,9,11,24)"
+        required: true
+        type: string
+
+jobs:
+  select:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: digest-script
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Select articles and generate digest
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_SES_REGION: ${{ secrets.AWS_SES_REGION }}
+          DIGEST_RECIPIENTS: ${{ secrets.DIGEST_RECIPIENTS }}
+          ROY_EMAIL: ${{ secrets.ROY_EMAIL }}
+          UNSUBSCRIBE_SECRET: ${{ secrets.UNSUBSCRIBE_SECRET }}
+          SITE_URL: ${{ secrets.SITE_URL }}
+        run: python surescore_digest.py --select "${{ github.event.inputs.picks }}" --send
