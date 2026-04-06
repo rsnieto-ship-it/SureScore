@@ -1,10 +1,10 @@
 name: "Digest — Wednesday Send Remaining"
 
 on:
-  schedule:
-    # Wednesday 9:00 AM Central Time (15:00 UTC)
-    - cron: "0 15 * * 3"
-  workflow_dispatch: # Allow manual trigger from GitHub UI
+  # Disabled — all subscribers now sent on Tuesday (SES supports 50k/day)
+  # schedule:
+  #   - cron: "0 15 * * 3"
+  workflow_dispatch: # Keep manual trigger as backup
 
 jobs:
   send-remaining:
