@@ -2,11 +2,11 @@ name: "Digest — Tuesday Auto-Select Fallback"
 
 on:
   schedule:
-    # Tuesday 6:00 AM Central Time (12:00 UTC)
-    # Runs 3 hours before batch-1 send at 9am CT
-    # CDT (Mar-Nov) = UTC-5, CST (Nov-Mar) = UTC-6
-    # Using 11:00 UTC = 6:00 AM CDT / 5:00 AM CST
+    # Fire at both possible UTC times for 6:00 AM Central:
+    # 11:00 UTC = 6:00 AM CDT (March–November)
+    # 12:00 UTC = 6:00 AM CST (November–March)
     - cron: "0 11 * * 2"
+    - cron: "0 12 * * 2"
   workflow_dispatch: # Allow manual trigger from GitHub UI
 
 jobs:
@@ -17,16 +17,32 @@ jobs:
         working-directory: digest-script
 
     steps:
+      - name: Check if it's 6 AM Central Time
+        id: tz-check
+        run: |
+          CENTRAL_HOUR=$(TZ="America/Chicago" date +%H)
+          echo "Central time hour: $CENTRAL_HOUR"
+          if [ "$CENTRAL_HOUR" != "06" ]; then
+            echo "Not 6 AM Central — skipping (DST mismatch). Hour is $CENTRAL_HOUR."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - uses: actions/checkout@v4
+        if: steps.tz-check.outputs.skip != 'true'
 
       - uses: actions/setup-python@v5
+        if: steps.tz-check.outputs.skip != 'true'
         with:
           python-version: "3.12"
 
       - name: Install dependencies
+        if: steps.tz-check.outputs.skip != 'true'
         run: pip install -r requirements.txt
 
       - name: Auto-select if no manual picks
+        if: steps.tz-check.outputs.skip != 'true'
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}

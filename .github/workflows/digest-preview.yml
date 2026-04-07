@@ -2,10 +2,11 @@ name: "Digest — Monday Preview"
 
 on:
   schedule:
-    # Monday 7:00 AM Central Time (13:00 UTC)
-    # CDT (Mar-Nov) = UTC-5, CST (Nov-Mar) = UTC-6
-    # Using 13:00 UTC = 7:00 AM CDT
+    # Fire at both possible UTC times for 8:00 AM Central:
+    # 13:00 UTC = 8:00 AM CDT (March–November)
+    # 14:00 UTC = 8:00 AM CST (November–March)
     - cron: "0 13 * * 1"
+    - cron: "0 14 * * 1"
   workflow_dispatch: # Allow manual trigger from GitHub UI
 
 jobs:
@@ -16,16 +17,32 @@ jobs:
         working-directory: digest-script
 
     steps:
+      - name: Check if it's 8 AM Central Time
+        id: tz-check
+        run: |
+          CENTRAL_HOUR=$(TZ="America/Chicago" date +%H)
+          echo "Central time hour: $CENTRAL_HOUR"
+          if [ "$CENTRAL_HOUR" != "08" ]; then
+            echo "Not 8 AM Central — skipping (DST mismatch). Hour is $CENTRAL_HOUR."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - uses: actions/checkout@v4
+        if: steps.tz-check.outputs.skip != 'true'
 
       - uses: actions/setup-python@v5
+        if: steps.tz-check.outputs.skip != 'true'
         with:
           python-version: "3.12"
 
       - name: Install dependencies
+        if: steps.tz-check.outputs.skip != 'true'
         run: pip install -r requirements.txt
 
       - name: Run preview
+        if: steps.tz-check.outputs.skip != 'true'
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}

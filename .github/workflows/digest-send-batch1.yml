@@ -2,28 +2,48 @@ name: "Digest — Tuesday Send All"
 
 on:
   schedule:
-    # Tuesday 9:00 AM Central Time (15:00 UTC)
-    - cron: "0 15 * * 2"
+    # Fire at both possible UTC times for 7:45 AM Central:
+    # 12:45 UTC = 7:45 AM CDT (March–November)
+    # 13:45 UTC = 7:45 AM CST (November–March)
+    - cron: "45 12 * * 2"
+    - cron: "45 13 * * 2"
   workflow_dispatch: # Allow manual trigger from GitHub UI
 
 jobs:
-  send-batch-1:
+  send-all:
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: digest-script
 
     steps:
+      - name: Check if it's 7:45 AM Central Time
+        id: tz-check
+        run: |
+          CENTRAL_HOUR=$(TZ="America/Chicago" date +%H)
+          echo "Central time hour: $CENTRAL_HOUR"
+          if [ "$CENTRAL_HOUR" != "07" ]; then
+            echo "Not 7 AM Central — skipping (DST mismatch). Hour is $CENTRAL_HOUR."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+        working-directory: .
+
       - uses: actions/checkout@v4
+        if: steps.tz-check.outputs.skip != 'true'
 
       - uses: actions/setup-python@v5
+        if: steps.tz-check.outputs.skip != 'true'
         with:
           python-version: "3.12"
 
       - name: Install dependencies
+        if: steps.tz-check.outputs.skip != 'true'
         run: pip install -r requirements.txt
 
       - name: Send to all subscribers
+        if: steps.tz-check.outputs.skip != 'true'
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}

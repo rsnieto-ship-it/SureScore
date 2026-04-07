@@ -2,11 +2,11 @@ name: "Digest — Daily Analytics Report"
 
 on:
   schedule:
-    # Every day at 4:45 PM Central Time
-    # CDT (Mar-Nov) = UTC-5 → 21:45 UTC
-    # CST (Nov-Mar) = UTC-6 → 22:45 UTC
-    # Using 21:45 UTC = 4:45 PM CDT
+    # Fire at both possible UTC times for 4:45 PM Central:
+    # 21:45 UTC = 4:45 PM CDT (March–November)
+    # 22:45 UTC = 4:45 PM CST (November–March)
     - cron: "45 21 * * *"
+    - cron: "45 22 * * *"
   workflow_dispatch: # Allow manual trigger
 
 jobs:
@@ -17,16 +17,32 @@ jobs:
         working-directory: digest-script
 
     steps:
+      - name: Check if it's 4 PM Central Time
+        id: tz-check
+        run: |
+          CENTRAL_HOUR=$(TZ="America/Chicago" date +%H)
+          echo "Central time hour: $CENTRAL_HOUR"
+          if [ "$CENTRAL_HOUR" != "16" ]; then
+            echo "Not 4 PM Central — skipping (DST mismatch). Hour is $CENTRAL_HOUR."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - uses: actions/checkout@v4
+        if: steps.tz-check.outputs.skip != 'true'
 
       - uses: actions/setup-python@v5
+        if: steps.tz-check.outputs.skip != 'true'
         with:
           python-version: "3.12"
 
       - name: Install dependencies
+        if: steps.tz-check.outputs.skip != 'true'
         run: pip install -r requirements.txt
 
       - name: Send analytics report
+        if: steps.tz-check.outputs.skip != 'true'
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
