@@ -3505,6 +3505,18 @@ def run_analytics_report(conn):
     """, (latest["id"],))
     today_clicks = cur.fetchone()["clicks_today"]
 
+    # Get everyone who opened the latest digest
+    cur.execute("""
+        SELECT DISTINCT ON (do2.email)
+            do2.email, do2."openedAt",
+            c."firstName", c."lastName", c."districtName", c.title
+        FROM "DigestOpen" do2
+        LEFT JOIN "Contact" c ON c.email = do2.email
+        WHERE do2."digestId" = %s
+        ORDER BY do2.email, do2."openedAt" ASC
+    """, (latest["id"],))
+    openers = [dict(r) for r in cur.fetchall()]
+
     pg.close()
 
     # Build report
@@ -3514,35 +3526,38 @@ def run_analytics_report(conn):
     # Build HTML email
     today_str = datetime.now().strftime("%A, %B %d, %Y")
 
-    digest_rows = ""
-    for d in digests:
-        sends = d["sends"] or 0
-        opens = d["unique_opens"] or 0
-        clicks = d["total_clicks"] or 0
-        open_rate = f"{(opens / sends * 100):.1f}%" if sends > 0 else "—"
-        click_rate = f"{(clicks / sends * 100):.1f}%" if sends > 0 else "—"
-        week = d["sentAt"].strftime("%b %d") if d.get("sentAt") else "—"
-        subj = (d.get("first_title") or "No title")[:50]
-        digest_rows += f"""
+    # Build openers table rows — sorted by district then name
+    openers_sorted = sorted(openers, key=lambda o: (o.get("districtName") or "zzz", o.get("lastName") or "", o.get("firstName") or ""))
+    opener_rows = ""
+    for o in openers_sorted:
+        name = f"{o.get('firstName') or ''} {o.get('lastName') or ''}".strip() or "—"
+        district = o.get("districtName") or "—"
+        title = o.get("title") or "—"
+        email = o["email"]
+        opener_rows += f"""
         <tr style="border-bottom: 1px solid #eee;">
-            <td style="padding: 8px; font-size: 13px;">{week}</td>
-            <td style="padding: 8px; font-size: 13px;">{subj}</td>
-            <td style="padding: 8px; text-align: center;">{sends:,}</td>
-            <td style="padding: 8px; text-align: center; font-weight: bold;">{open_rate}</td>
-            <td style="padding: 8px; text-align: center; font-weight: bold;">{click_rate}</td>
+            <td style="padding: 6px 8px; font-size: 13px;">{name}</td>
+            <td style="padding: 6px 8px; font-size: 13px;">{district}</td>
+            <td style="padding: 6px 8px; font-size: 13px;">{title}</td>
+            <td style="padding: 6px 8px; font-size: 12px; color: #666;">{email}</td>
         </tr>"""
 
     links_html = ""
-    for url, clickers in top_links[:5]:
+    for url, clickers in top_links[:10]:
         url_short = url[:60] + "..." if len(url) > 60 else url
         people_html = ""
+        seen = set()
         for c in clickers[:10]:
+            if c["email"] in seen:
+                continue
+            seen.add(c["email"])
             name = f"{c.get('firstName') or ''} {c.get('lastName') or ''}".strip() or c["email"]
             district = c.get("districtName") or ""
             title = c.get("title") or ""
             info = f" — {district}" if district else (f" — {title}" if title else "")
             people_html += f'<div style="font-size: 12px; color: #666; margin-left: 16px;">{name}{info} ({c["email"]})</div>'
-        links_html += f'<li style="margin-bottom: 12px; font-size: 13px;"><strong>{url_short}</strong> — {len(clickers)} click{"s" if len(clickers) != 1 else ""}{people_html}</li>'
+        unique_clickers = len(seen)
+        links_html += f'<li style="margin-bottom: 12px; font-size: 13px;"><a href="{url}" style="color: #1a5276;">{url_short}</a> — {unique_clickers} person{"s" if unique_clickers != 1 else ""}{people_html}</li>'
 
     latest_sends = latest["sends"] or 0
     latest_opens = latest["unique_opens"] or 0
@@ -3551,7 +3566,7 @@ def run_analytics_report(conn):
     latest_click_rate = f"{(latest_clicks / latest_sends * 100):.1f}%" if latest_sends > 0 else "—"
 
     html = f"""
-    <html><body style="font-family: Arial, sans-serif; max-width: 650px; margin: 0 auto; color: #333;">
+    <html><body style="font-family: Arial, sans-serif; max-width: 700px; margin: 0 auto; color: #333;">
     <h2 style="margin-bottom: 5px;">SureScore Intel — Daily Analytics</h2>
     <p style="color: #888; margin-top: 0;">{today_str}</p>
 
@@ -3583,20 +3598,19 @@ def run_analytics_report(conn):
         </table>
     </div>
 
-    <h3 style="font-size: 15px;">Last 5 Digests</h3>
+    <h3 style="font-size: 15px;">Who Opened ({len(openers)} people)</h3>
     <table style="width: 100%; border-collapse: collapse;">
         <tr style="background: #f5f5f5;">
-            <th style="padding: 8px; text-align: left; font-size: 12px;">Week</th>
-            <th style="padding: 8px; text-align: left; font-size: 12px;">Subject</th>
-            <th style="padding: 8px; text-align: center; font-size: 12px;">Sent</th>
-            <th style="padding: 8px; text-align: center; font-size: 12px;">Open %</th>
-            <th style="padding: 8px; text-align: center; font-size: 12px;">Click %</th>
+            <th style="padding: 6px 8px; text-align: left; font-size: 12px;">Name</th>
+            <th style="padding: 6px 8px; text-align: left; font-size: 12px;">District</th>
+            <th style="padding: 6px 8px; text-align: left; font-size: 12px;">Title</th>
+            <th style="padding: 6px 8px; text-align: left; font-size: 12px;">Email</th>
         </tr>
-        {digest_rows}
+        {opener_rows}
     </table>
 
-    <h3 style="font-size: 15px; margin-top: 20px;">Top Clicked Links (30 days)</h3>
-    <ol style="padding-left: 20px;">{links_html}</ol>
+    <h3 style="font-size: 15px; margin-top: 20px;">Links Clicked</h3>
+    <ol style="padding-left: 20px;">{links_html if links_html else '<li style="font-size: 13px; color: #888;">No clicks yet</li>'}</ol>
 
     <hr style="margin-top: 24px; border: none; border-top: 1px solid #eee;">
     <p style="color: #999; font-size: 11px;">Automated daily report from SureScore Intel digest system.</p>
