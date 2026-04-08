@@ -3683,6 +3683,253 @@ def run_analytics_report(conn):
     print(f"\n✅ Analytics report complete.\n")
 
 
+def run_subscriber_quality_report(conn):
+    """Generate and email a subscriber quality report."""
+    print("\n👥 SUBSCRIBER QUALITY REPORT\n")
+
+    pg = _get_pg_conn()
+    if not pg:
+        print("❌ Cannot connect to PostgreSQL.")
+        return
+
+    cur = pg.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+
+    # Total subscribers
+    cur.execute("""SELECT COUNT(*) as total FROM "Contact" WHERE status = 'SUBSCRIBED'""")
+    total = cur.fetchone()["total"]
+
+    # Breakdown by title (normalized into role buckets)
+    cur.execute("""
+        SELECT title, COUNT(*) as cnt
+        FROM "Contact"
+        WHERE status = 'SUBSCRIBED' AND title IS NOT NULL AND title != ''
+        GROUP BY title
+        ORDER BY cnt DESC
+    """)
+    title_rows = [dict(r) for r in cur.fetchall()]
+
+    # Categorize into role buckets
+    role_buckets = {
+        "Superintendent / Asst. Superintendent": [],
+        "Curriculum / Instruction Director": [],
+        "Principal / Asst. Principal": [],
+        "Counselor / Advisor": [],
+        "Teacher / Faculty": [],
+        "Board Member / Trustee": [],
+        "Other Administrator": [],
+        "Unknown / No Title": [],
+    }
+
+    def categorize_title(title):
+        t = (title or "").lower()
+        if any(k in t for k in ["superintendent"]):
+            return "Superintendent / Asst. Superintendent"
+        if any(k in t for k in ["curriculum", "instruction", "academic officer", "cao", "cio", "c&i"]):
+            return "Curriculum / Instruction Director"
+        if any(k in t for k in ["principal"]):
+            return "Principal / Asst. Principal"
+        if any(k in t for k in ["counselor", "advisor", "advising", "guidance"]):
+            return "Counselor / Advisor"
+        if any(k in t for k in ["teacher", "faculty", "professor", "instructor", "coach"]):
+            return "Teacher / Faculty"
+        if any(k in t for k in ["board", "trustee"]):
+            return "Board Member / Trustee"
+        if any(k in t for k in ["director", "coordinator", "specialist", "admin", "manager", "officer", "dean", "executive"]):
+            return "Other Administrator"
+        return "Unknown / No Title"
+
+    for row in title_rows:
+        bucket = categorize_title(row["title"])
+        role_buckets[bucket].append({"title": row["title"], "count": row["cnt"]})
+
+    # Count contacts with no title
+    cur.execute("""
+        SELECT COUNT(*) as cnt FROM "Contact"
+        WHERE status = 'SUBSCRIBED' AND (title IS NULL OR title = '')
+    """)
+    no_title_count = cur.fetchone()["cnt"]
+
+    # Top districts by subscriber count
+    cur.execute("""
+        SELECT "districtName", COUNT(*) as cnt
+        FROM "Contact"
+        WHERE status = 'SUBSCRIBED' AND "districtName" IS NOT NULL AND "districtName" != ''
+        GROUP BY "districtName"
+        ORDER BY cnt DESC
+        LIMIT 20
+    """)
+    top_districts = [dict(r) for r in cur.fetchall()]
+
+    # Contacts with no district
+    cur.execute("""
+        SELECT COUNT(*) as cnt FROM "Contact"
+        WHERE status = 'SUBSCRIBED' AND ("districtName" IS NULL OR "districtName" = '')
+    """)
+    no_district_count = cur.fetchone()["cnt"]
+
+    # Decision-makers: superintendent, principal, director, board — the people who sign contracts
+    cur.execute("""
+        SELECT c."firstName", c."lastName", c.email, c.title, c."districtName"
+        FROM "Contact" c
+        WHERE c.status = 'SUBSCRIBED'
+          AND (
+            c.title ILIKE '%superintendent%'
+            OR c.title ILIKE '%principal%'
+            OR c.title ILIKE '%board%'
+            OR c.title ILIKE '%trustee%'
+          )
+        ORDER BY c."districtName", c."lastName"
+    """)
+    decision_makers = [dict(r) for r in cur.fetchall()]
+
+    pg.close()
+
+    # Print summary
+    print(f"   Total subscribed: {total:,}")
+    print(f"   No title: {no_title_count:,}")
+    print(f"   No district: {no_district_count:,}")
+    print(f"   Decision-makers: {len(decision_makers)}\n")
+
+    # Build HTML email
+    today_str = datetime.now().strftime("%A, %B %d, %Y")
+
+    # Role bucket rows
+    bucket_rows = ""
+    for bucket_name, entries in role_buckets.items():
+        count = sum(e["count"] for e in entries)
+        if bucket_name == "Unknown / No Title":
+            count += no_title_count
+        if count == 0:
+            continue
+        pct = f"{(count / total * 100):.1f}%" if total > 0 else "—"
+        # Bar width for visual
+        bar_width = min(int(count / total * 200), 200) if total > 0 else 0
+        bucket_rows += f"""
+        <tr style="border-bottom: 1px solid #eee;">
+            <td style="padding: 8px; font-size: 13px;">{bucket_name}</td>
+            <td style="padding: 8px; text-align: right; font-weight: bold; font-size: 13px;">{count:,}</td>
+            <td style="padding: 8px; text-align: right; font-size: 13px; color: #666;">{pct}</td>
+            <td style="padding: 8px;">
+                <div style="background: #d97706; height: 14px; border-radius: 3px; width: {bar_width}px;"></div>
+            </td>
+        </tr>"""
+
+    # District rows
+    district_rows = ""
+    for d in top_districts:
+        district_rows += f"""
+        <tr style="border-bottom: 1px solid #eee;">
+            <td style="padding: 6px 8px; font-size: 13px;">{d['districtName']}</td>
+            <td style="padding: 6px 8px; text-align: right; font-weight: bold; font-size: 13px;">{d['cnt']:,}</td>
+        </tr>"""
+
+    # Decision-maker rows
+    dm_rows = ""
+    for dm in decision_makers:
+        name = f"{dm.get('firstName') or ''} {dm.get('lastName') or ''}".strip() or "—"
+        dm_rows += f"""
+        <tr style="border-bottom: 1px solid #eee;">
+            <td style="padding: 6px 8px; font-size: 13px;">{name}</td>
+            <td style="padding: 6px 8px; font-size: 13px;">{dm.get('title') or '—'}</td>
+            <td style="padding: 6px 8px; font-size: 13px;">{dm.get('districtName') or '—'}</td>
+            <td style="padding: 6px 8px; font-size: 12px; color: #666;">{dm['email']}</td>
+        </tr>"""
+
+    html = f"""
+    <html><body style="font-family: Arial, sans-serif; max-width: 750px; margin: 0 auto; color: #333;">
+    <h2 style="margin-bottom: 5px;">SureScore Intel — Subscriber Quality Report</h2>
+    <p style="color: #888; margin-top: 0;">{today_str}</p>
+
+    <div style="background: #f0f7ff; border-radius: 8px; padding: 16px; margin-bottom: 20px;">
+        <table style="width: 100%;">
+            <tr>
+                <td style="text-align: center; padding: 8px;">
+                    <div style="font-size: 28px; font-weight: bold; color: #1a5276;">{total:,}</div>
+                    <div style="font-size: 12px; color: #888;">Subscribed</div>
+                </td>
+                <td style="text-align: center; padding: 8px;">
+                    <div style="font-size: 28px; font-weight: bold; color: #27ae60;">{len(decision_makers):,}</div>
+                    <div style="font-size: 12px; color: #888;">Decision-Makers</div>
+                </td>
+                <td style="text-align: center; padding: 8px;">
+                    <div style="font-size: 28px; font-weight: bold; color: #e67e22;">{len(top_districts)}</div>
+                    <div style="font-size: 12px; color: #888;">Districts</div>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <h3 style="font-size: 15px;">Subscriber Roles</h3>
+    <table style="width: 100%; border-collapse: collapse;">
+        <tr style="background: #f5f5f5;">
+            <th style="padding: 8px; text-align: left; font-size: 12px;">Role</th>
+            <th style="padding: 8px; text-align: right; font-size: 12px;">Count</th>
+            <th style="padding: 8px; text-align: right; font-size: 12px;">%</th>
+            <th style="padding: 8px; font-size: 12px;"></th>
+        </tr>
+        {bucket_rows}
+    </table>
+
+    <h3 style="font-size: 15px; margin-top: 24px;">Top Districts ({len(top_districts)})</h3>
+    <table style="width: 100%; border-collapse: collapse;">
+        <tr style="background: #f5f5f5;">
+            <th style="padding: 6px 8px; text-align: left; font-size: 12px;">District</th>
+            <th style="padding: 6px 8px; text-align: right; font-size: 12px;">Subscribers</th>
+        </tr>
+        {district_rows}
+    </table>
+    <p style="font-size: 12px; color: #888; margin-top: 4px;">{no_district_count:,} subscribers have no district listed</p>
+
+    <h3 style="font-size: 15px; margin-top: 24px;">Decision-Makers ({len(decision_makers)})</h3>
+    <p style="font-size: 12px; color: #888; margin-top: 0;">Superintendents, principals, board members — the people who sign contracts</p>
+    <table style="width: 100%; border-collapse: collapse;">
+        <tr style="background: #f5f5f5;">
+            <th style="padding: 6px 8px; text-align: left; font-size: 12px;">Name</th>
+            <th style="padding: 6px 8px; text-align: left; font-size: 12px;">Title</th>
+            <th style="padding: 6px 8px; text-align: left; font-size: 12px;">District</th>
+            <th style="padding: 6px 8px; text-align: left; font-size: 12px;">Email</th>
+        </tr>
+        {dm_rows if dm_rows else '<tr><td colspan="4" style="padding: 8px; color: #888;">No decision-makers found</td></tr>'}
+    </table>
+
+    <hr style="margin-top: 24px; border: none; border-top: 1px solid #eee;">
+    <p style="color: #999; font-size: 11px;">SureScore Intel — Subscriber Quality Report</p>
+    </body></html>"""
+
+    # Send via SES
+    if not AWS_ACCESS_KEY_ID or not AWS_SECRET_ACCESS_KEY:
+        print("   ❌ AWS SES credentials not set.")
+        return
+
+    subject = f"Subscriber Quality Report — {datetime.now().strftime('%b %d')}: {total:,} subscribers, {len(decision_makers)} decision-makers"
+
+    try:
+        ses_client = boto3.client(
+            "ses",
+            region_name=AWS_SES_REGION,
+            aws_access_key_id=AWS_ACCESS_KEY_ID,
+            aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
+        )
+        preview_recipients = [r.strip() for r in os.environ.get("DIGEST_RECIPIENTS", ROY_EMAIL).split(",") if r.strip()]
+        for recipient in preview_recipients:
+            msg = MIMEMultipart("alternative")
+            msg["Subject"] = subject
+            msg["From"] = SES_SENDER
+            msg["To"] = recipient
+            msg.attach(MIMEText(f"Subscribers: {total}, Decision-makers: {len(decision_makers)}", "plain"))
+            msg.attach(MIMEText(html, "html"))
+            ses_client.send_raw_email(
+                Source=SES_SENDER,
+                Destinations=[recipient],
+                RawMessage={"Data": msg.as_string()},
+            )
+            print(f"   ✅ Report sent to {recipient}")
+    except Exception as e:
+        print(f"   ❌ Failed to send report: {e}")
+
+    print(f"\n✅ Subscriber quality report complete.\n")
+
+
 # ============================================================
 # MAIN
 # ============================================================
@@ -3716,8 +3963,9 @@ def main():
                        help="Send daily analytics report (open rates, click rates) to Roy")
     group.add_argument("--backfill-sends", type=str, metavar="DIGEST_ID",
                        help="Backfill DigestSendLog for a digest that sent but wasn't logged")
+    group.add_argument("--subscriber-quality", action="store_true",
+                       help="Email a subscriber quality report (roles, districts, decision-makers)")
     group.add_argument("--unsubs", action="store_true",
-                       help="Show recent unsubscribes")
     group.add_argument("--clicks", type=str, metavar="URL_PATTERN", nargs="?", const="",
                        help="Show who clicked a URL (partial match). No arg = show all clicks.")
     parser.add_argument("--batch-limit", type=int, metavar="N", default=0,
@@ -3803,6 +4051,8 @@ def main():
         show_rubric(conn)
     elif args.analytics:
         run_analytics_report(conn)
+    elif args.subscriber_quality:
+        run_subscriber_quality_report(conn)
     elif args.backfill_sends:
         digest_id = args.backfill_sends
         print(f"\n📝 BACKFILL — Logging sends for digest {digest_id}\n")
