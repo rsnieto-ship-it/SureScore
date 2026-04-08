@@ -3966,6 +3966,7 @@ def main():
     group.add_argument("--subscriber-quality", action="store_true",
                        help="Email a subscriber quality report (roles, districts, decision-makers)")
     group.add_argument("--unsubs", action="store_true",
+                       help="Show recent unsubscribes")
     group.add_argument("--clicks", type=str, metavar="URL_PATTERN", nargs="?", const="",
                        help="Show who clicked a URL (partial match). No arg = show all clicks.")
     parser.add_argument("--batch-limit", type=int, metavar="N", default=0,
