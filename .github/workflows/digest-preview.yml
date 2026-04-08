@@ -19,6 +19,7 @@ jobs:
     steps:
       - name: Check if it's 8 AM Central Time
         id: tz-check
+        working-directory: .
         run: |
           CENTRAL_HOUR=$(TZ="America/Chicago" date +%H)
           echo "Central time hour: $CENTRAL_HOUR"
