@@ -3507,7 +3507,7 @@ def run_analytics_report(conn):
 
     # Get the articles included in the latest digest
     cur.execute("""
-        SELECT title, url, "isSatire", position
+        SELECT title, link, "isSatire", position
         FROM "DigestStory"
         WHERE "digestId" = %s
         ORDER BY position
@@ -3540,8 +3540,8 @@ def run_analytics_report(conn):
     articles_html = ""
     for a in real_articles:
         title = a.get("title") or "Untitled"
-        url = a.get("url") or "#"
-        articles_html += f'<li style="margin-bottom: 6px; font-size: 13px;"><a href="{url}" style="color: #1a5276;">{title}</a></li>'
+        link = a.get("link") or "#"
+        articles_html += f'<li style="margin-bottom: 6px; font-size: 13px;"><a href="{link}" style="color: #1a5276;">{title}</a></li>'
 
     # Build openers table rows — sorted by district then name
     openers_sorted = sorted(openers, key=lambda o: (o.get("districtName") or "zzz", o.get("lastName") or "", o.get("firstName") or ""))
