@@ -3716,6 +3716,8 @@ def main():
                        help="Send daily analytics report (open rates, click rates) to Roy")
     group.add_argument("--backfill-sends", type=str, metavar="DIGEST_ID",
                        help="Backfill DigestSendLog for a digest that sent but wasn't logged")
+    group.add_argument("--unsubs", action="store_true",
+                       help="Show recent unsubscribes")
     group.add_argument("--clicks", type=str, metavar="URL_PATTERN", nargs="?", const="",
                        help="Show who clicked a URL (partial match). No arg = show all clicks.")
     parser.add_argument("--batch-limit", type=int, metavar="N", default=0,
@@ -3822,6 +3824,37 @@ def main():
                 )
             conn.commit()
             print(f"   ✅ Logged {len(contacts)} send records for digest {digest_id}")
+    elif args.unsubs:
+        print(f"\n🚫 UNSUBSCRIBE REPORT\n")
+        pg = _get_pg_conn()
+        if not pg:
+            print("❌ Cannot connect to PostgreSQL.")
+        else:
+            pgcur = pg.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+            pgcur.execute('SELECT COUNT(*) as total FROM "Unsubscription"')
+            total = pgcur.fetchone()["total"]
+            pgcur.execute("""
+                SELECT u.email, u.list, u."createdAt",
+                       c."firstName", c."lastName", c."districtName", c.title
+                FROM "Unsubscription" u
+                LEFT JOIN "Contact" c ON c.email = u.email
+                ORDER BY u."createdAt" DESC
+                LIMIT 30
+            """)
+            rows = [dict(r) for r in pgcur.fetchall()]
+            pg.close()
+            print(f"   Total unsubscribes: {total}\n")
+            if not rows:
+                print("   No unsubscribes found.")
+            else:
+                for r in rows:
+                    name = f"{r.get('firstName') or ''} {r.get('lastName') or ''}".strip() or "Unknown"
+                    district = r.get("districtName") or ""
+                    info = f" / {district}" if district else ""
+                    date_str = r["createdAt"].strftime("%b %d %I:%M%p") if r.get("createdAt") else "—"
+                    print(f"   {name:30s} {district or '—':40s} {date_str}")
+                    print(f"     {r['email']}")
+                    print()
     elif args.clicks is not None:
         print(f"\n🔗 CLICK REPORT\n")
         pg = _get_pg_conn()
