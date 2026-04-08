@@ -41,36 +41,14 @@ export async function GET(request: NextRequest) {
   const email = request.nextUrl.searchParams.get("e");
   const digestId = request.nextUrl.searchParams.get("d");
   const url = request.nextUrl.searchParams.get("u") || FALLBACK_URL;
-  const confirmed = request.nextUrl.searchParams.get("confirmed");
   const userAgent = request.headers.get("user-agent");
 
-  // Stage 1: First hit — serve an HTML page with JS redirect.
-  // Bots won't execute JS, so they stop here.
-  if (!confirmed) {
-    const confirmUrl = new URL(request.url);
-    confirmUrl.searchParams.set("confirmed", "1");
-
-    const html = `<!DOCTYPE html>
-<html><head>
-<meta http-equiv="refresh" content="2;url=${url}">
-<script>
-fetch("${confirmUrl.toString()}", { keepalive: true });
-window.location.replace("${url}");
-</script>
-</head>
-<body>Redirecting...</body></html>`;
-
-    return new NextResponse(html, {
-      headers: { "Content-Type": "text/html" },
-    });
-  }
-
-  // Stage 2: JS callback — this is a real human click
+  // Record the click if it's not a bot, then redirect to the destination
   if (email && digestId && !isBot(userAgent)) {
     prisma.digestClick
       .create({ data: { email, digestId, url } })
       .catch(() => {});
   }
 
-  return new NextResponse(null, { status: 204 });
+  return NextResponse.redirect(url, 302);
 }
