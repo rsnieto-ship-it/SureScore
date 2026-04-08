@@ -3467,15 +3467,16 @@ def run_analytics_report(conn):
         pg.close()
         return
 
-    # Get top clicked links from last 30 days WITH who clicked
+    # Get clicked links for the latest digest WITH who clicked
+    latest = digests[0]
     cur.execute("""
         SELECT dc.url, dc.email, dc."clickedAt",
                c."firstName", c."lastName", c."districtName", c.title
         FROM "DigestClick" dc
         LEFT JOIN "Contact" c ON c.email = dc.email
-        WHERE dc."clickedAt" > NOW() - INTERVAL '30 days'
+        WHERE dc."digestId" = %s
         ORDER BY dc."clickedAt" DESC
-    """)
+    """, (latest["id"],))
     all_clicks = [dict(r) for r in cur.fetchall()]
 
     # Group by URL
@@ -3490,7 +3491,6 @@ def run_analytics_report(conn):
     top_links = sorted(clicks_by_url.items(), key=lambda x: -len(x[1]))[:10]
 
     # Get today's activity for the most recent digest
-    latest = digests[0]
     cur.execute("""
         SELECT COUNT(DISTINCT email) as opens_today
         FROM "DigestOpen"
@@ -3504,6 +3504,15 @@ def run_analytics_report(conn):
         WHERE "digestId" = %s AND "clickedAt"::date = CURRENT_DATE
     """, (latest["id"],))
     today_clicks = cur.fetchone()["clicks_today"]
+
+    # Get the articles included in the latest digest
+    cur.execute("""
+        SELECT title, url, "isSatire", position
+        FROM "DigestStory"
+        WHERE "digestId" = %s
+        ORDER BY position
+    """, (latest["id"],))
+    articles = [dict(r) for r in cur.fetchall()]
 
     # Get everyone who opened the latest digest
     cur.execute("""
@@ -3525,6 +3534,14 @@ def run_analytics_report(conn):
 
     # Build HTML email
     today_str = datetime.now().strftime("%A, %B %d, %Y")
+
+    # Build articles list
+    real_articles = [a for a in articles if not a.get("isSatire")]
+    articles_html = ""
+    for a in real_articles:
+        title = a.get("title") or "Untitled"
+        url = a.get("url") or "#"
+        articles_html += f'<li style="margin-bottom: 6px; font-size: 13px;"><a href="{url}" style="color: #1a5276;">{title}</a></li>'
 
     # Build openers table rows — sorted by district then name
     openers_sorted = sorted(openers, key=lambda o: (o.get("districtName") or "zzz", o.get("lastName") or "", o.get("firstName") or ""))
@@ -3598,6 +3615,9 @@ def run_analytics_report(conn):
         </table>
     </div>
 
+    <h3 style="font-size: 15px;">Articles Sent ({len(real_articles)})</h3>
+    <ol style="padding-left: 20px;">{articles_html}</ol>
+
     <h3 style="font-size: 15px;">Who Opened ({len(openers)} people)</h3>
     <table style="width: 100%; border-collapse: collapse;">
         <tr style="background: #f5f5f5;">
@@ -3609,7 +3629,7 @@ def run_analytics_report(conn):
         {opener_rows}
     </table>
 
-    <h3 style="font-size: 15px; margin-top: 20px;">Links Clicked</h3>
+    <h3 style="font-size: 15px; margin-top: 20px;">Links Clicked ({len(all_clicks)} total)</h3>
     <ol style="padding-left: 20px;">{links_html if links_html else '<li style="font-size: 13px; color: #888;">No clicks yet</li>'}</ol>
 
     <hr style="margin-top: 24px; border: none; border-top: 1px solid #eee;">
