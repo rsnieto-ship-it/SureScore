@@ -2152,7 +2152,7 @@ def _wrap_click_url(click_tracking_base, destination):
     return f"{click_tracking_base}&u={quote(destination, safe='')}"
 
 
-def build_email_html(stories, unsubscribe_url=None, tracking_pixel_url=None, click_tracking_base=None):
+def build_email_html(stories, unsubscribe_url=None, tracking_pixel_url=None, click_tracking_base=None, web_url=None):
     """Create a beautiful HTML email with the digest."""
     today = datetime.now().strftime("%A, %B %d, %Y")
 
@@ -2501,6 +2501,13 @@ def build_email_html(stories, unsubscribe_url=None, tracking_pixel_url=None, cli
                     </p>
                 </td></tr>
 
+                {"" if not web_url else f'''<!-- View Online -->
+                <tr><td style="background-color: #f9f9f6; padding: 8px 32px; text-align: center; border-bottom: 1px solid #eee;">
+                    <p style="margin: 0; font-family: -apple-system, sans-serif; font-size: 12px; color: #999;">
+                        Having trouble viewing? <a href="{web_url}" style="color: #d97706; text-decoration: underline;">Read online</a>
+                    </p>
+                </td></tr>'''}
+
                 <!-- Date Bar -->
                 <tr><td style="background-color: #f9f9f6; padding: 12px 32px; border-bottom: 1px solid #eee;">
                     <p style="margin: 0; font-family: -apple-system, sans-serif; font-size: 13px; color: #888;">
@@ -2818,7 +2825,12 @@ def send_email(stories, recipients=None, digest_id=None, conn=None, pg_digest_id
                 tracking_url = f"{SITE_URL}/api/track/open?e={quote(recipient)}&d={digest_id}"
                 click_base = f"{SITE_URL}/api/track/click?e={quote(recipient)}&d={digest_id}"
 
-            html_content = build_email_html(stories, unsubscribe_url=unsub_url, tracking_pixel_url=tracking_url, click_tracking_base=click_base)
+            # "Read online" web link (uses the Digest model ID)
+            web_link = None
+            if pg_digest_id and SITE_URL:
+                web_link = f"{SITE_URL}/digest/{pg_digest_id}?e={quote(recipient)}"
+
+            html_content = build_email_html(stories, unsubscribe_url=unsub_url, tracking_pixel_url=tracking_url, click_tracking_base=click_base, web_url=web_link)
 
             msg = MIMEMultipart("alternative")
             msg["Subject"] = subject

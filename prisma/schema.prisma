@@ -314,5 +314,22 @@ model InboundEmail {
   @@index([fromEmail])
   @@index([toEmail])
   @@index([category])
-  @@index([status])
+}
+
+// ── Digest Page View Tracking ─────────────────────────────────────
+
+model DigestPageView {
+  id         String   @id @default(cuid())
+  digestId   String
+  sessionId  String   @unique
+  email      String?
+  timeOnPage Int      @default(0)
+  maxScroll  Int      @default(0)
+  userAgent  String?
+  referrer   String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([digestId])
+  @@index([email])
 }
