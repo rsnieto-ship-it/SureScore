@@ -2156,110 +2156,106 @@ def build_email_html(stories, unsubscribe_url=None, tracking_pixel_url=None, cli
     """Create a beautiful HTML email with the digest."""
     today = datetime.now().strftime("%A, %B %d, %Y")
 
-    # --- Ad blocks (inserted between stories) ---
-    contact_url = _wrap_click_url(click_tracking_base, 'https://surescore.com/contact') if click_tracking_base else 'https://surescore.com/contact'
-    tia_url = _wrap_click_url(click_tracking_base, 'https://surescore.com/services/tia-platform') if click_tracking_base else 'https://surescore.com/services/tia-platform'
+    # --- CTA blocks (inserted between stories) ---
+    sotd_trial_url = _wrap_click_url(click_tracking_base, 'https://surescore.com/trial/sotd') if click_tracking_base else 'https://surescore.com/trial/sotd'
+    tia_analysis_url = _wrap_click_url(click_tracking_base, 'https://surescore.com/trial/tia') if click_tracking_base else 'https://surescore.com/trial/tia'
 
-    AD_TIA = f"""
+    CTA_SOTD_TRIAL = f"""
         <tr><td style="padding: 8px 0 32px 0;">
             <table cellpadding="0" cellspacing="0" border="0" width="100%" style="background: linear-gradient(135deg, #1a1a2e 0%, #2d2b55 100%); border-radius: 10px; overflow: hidden;">
                 <tr><td style="padding: 28px 28px 8px;">
                     <p style="font-family: 'Courier New', monospace; font-size: 10px; font-weight: 700; letter-spacing: 2px; color: #d97706; margin: 0 0 6px 0;">
-                        FROM SURESCORE
+                        FREE 3-WEEK TRIAL
                     </p>
                     <p style="font-family: Georgia, serif; font-size: 20px; font-weight: 700; color: #ffffff; line-height: 1.35; margin: 0 0 12px 0;">
-                        Still wrestling spreadsheets for TIA submissions?
+                        Try TSIA Strategy of the Day &mdash; free for 3 weeks.
                     </p>
                 </td></tr>
                 <tr><td style="padding: 0 28px;">
                     <p style="font-family: -apple-system, sans-serif; font-size: 14px; color: rgba(255,255,255,0.8); line-height: 1.6; margin: 0 0 16px 0;">
-                        SureScore's <strong style="color: #ffffff;">TIA Data Platform</strong> automates the entire Teacher Incentive Allotment workflow &mdash; from roster matching across 12 assessment vendors to generating submission-ready 30-column TEA files. No more manual formulas. No more formatting nightmares.
+                        Give your students a daily edge on the TSIA2. Sign up <strong style="color: #ffffff;">2 Math or ELAR teachers</strong> for a free 3-week trial in May. No contracts, no credit card &mdash; just results.
                     </p>
                 </td></tr>
                 <tr><td style="padding: 0 28px;">
                     <table cellpadding="0" cellspacing="0" border="0">
                         <tr>
                             <td style="padding: 0 0 6px 0;">
-                                <span style="font-family: -apple-system, sans-serif; font-size: 13px; color: rgba(255,255,255,0.7);">&#10003;&nbsp; Automatic roster-to-assessment matching</span>
+                                <span style="font-family: -apple-system, sans-serif; font-size: 13px; color: rgba(255,255,255,0.7);">&#10003;&nbsp; Daily targeted TSIA2 strategy lessons</span>
                             </td>
                         </tr>
                         <tr>
                             <td style="padding: 0 0 6px 0;">
-                                <span style="font-family: -apple-system, sans-serif; font-size: 13px; color: rgba(255,255,255,0.7);">&#10003;&nbsp; TEA-aligned growth calculations built in</span>
+                                <span style="font-family: -apple-system, sans-serif; font-size: 13px; color: rgba(255,255,255,0.7);">&#10003;&nbsp; Math or ELAR &mdash; your choice</span>
                             </td>
                         </tr>
                         <tr>
                             <td style="padding: 0 0 6px 0;">
-                                <span style="font-family: -apple-system, sans-serif; font-size: 13px; color: rgba(255,255,255,0.7);">&#10003;&nbsp; Error &amp; gap flagging before you submit</span>
+                                <span style="font-family: -apple-system, sans-serif; font-size: 13px; color: rgba(255,255,255,0.7);">&#10003;&nbsp; Up to 2 teachers, ready in 48 hours</span>
                             </td>
                         </tr>
                         <tr>
                             <td style="padding: 0 0 6px 0;">
-                                <span style="font-family: -apple-system, sans-serif; font-size: 13px; color: rgba(255,255,255,0.7);">&#10003;&nbsp; Teacher self-service roster verification portal</span>
+                                <span style="font-family: -apple-system, sans-serif; font-size: 13px; color: rgba(255,255,255,0.7);">&#10003;&nbsp; Zero cost, zero commitment</span>
                             </td>
                         </tr>
                     </table>
                 </td></tr>
                 <tr><td style="padding: 20px 28px 28px;">
-                    <a href="{tia_url}" style="display: inline-block; padding: 12px 28px; background-color: #d97706; color: #ffffff; font-family: -apple-system, sans-serif; font-size: 14px; font-weight: 700; text-decoration: none; border-radius: 6px;">Learn More &rarr;</a>
-                    &nbsp;&nbsp;
-                    <a href="{contact_url}" style="font-family: -apple-system, sans-serif; font-size: 13px; color: #d97706; text-decoration: underline;">Request a Demo</a>
+                    <a href="{sotd_trial_url}" style="display: inline-block; padding: 12px 28px; background-color: #d97706; color: #ffffff; font-family: -apple-system, sans-serif; font-size: 14px; font-weight: 700; text-decoration: none; border-radius: 6px;">Start Free Trial &rarr;</a>
                 </td></tr>
             </table>
         </td></tr>
     """
 
-    AD_AI_TUTORS = f"""
+    CTA_TIA_ANALYSIS = f"""
         <tr><td style="padding: 8px 0 32px 0;">
             <table cellpadding="0" cellspacing="0" border="0" width="100%" style="border: 2px solid #d97706; border-radius: 10px; overflow: hidden; background-color: #fffbf5;">
                 <tr><td style="padding: 28px 28px 8px;">
                     <p style="font-family: 'Courier New', monospace; font-size: 10px; font-weight: 700; letter-spacing: 2px; color: #d97706; margin: 0 0 6px 0;">
-                        NEW FROM SURESCORE
+                        FREE FROM SURESCORE
                     </p>
                     <p style="font-family: Georgia, serif; font-size: 20px; font-weight: 700; color: #1a1a2e; line-height: 1.35; margin: 0 0 12px 0;">
-                        AI Tutors are here &mdash; and they never call in sick.
+                        How consistent are your TIA appraisers? Let us show you.
                     </p>
                 </td></tr>
                 <tr><td style="padding: 0 28px;">
                     <p style="font-family: -apple-system, sans-serif; font-size: 14px; color: #555; line-height: 1.6; margin: 0 0 16px 0;">
-                        SureScore's <strong style="color: #1a1a2e;">AI Tutor</strong> is a fully personalized, mastery-based learning companion built for TSIA2 prep. It delivers SureScore's proven curriculum through Socratic dialogue &mdash; not passive drills. Every student gets a patient, expert tutor available 24/7, regardless of location or school resources.
+                        Send us your prior TIA submission data and we'll run a <strong style="color: #1a1a2e;">complimentary Appraiser Analysis</strong> &mdash; scoring patterns, consistency gaps, and actionable insights. No cost, no strings attached.
                     </p>
                 </td></tr>
                 <tr><td style="padding: 0 28px;">
                     <table cellpadding="0" cellspacing="0" border="0">
                         <tr>
                             <td style="padding: 0 0 6px 0;">
-                                <span style="font-family: -apple-system, sans-serif; font-size: 13px; color: #666;">&#10003;&nbsp; Diagnostic-driven, personalized learning paths</span>
+                                <span style="font-family: -apple-system, sans-serif; font-size: 13px; color: #666;">&#10003;&nbsp; Identify appraiser scoring inconsistencies</span>
                             </td>
                         </tr>
                         <tr>
                             <td style="padding: 0 0 6px 0;">
-                                <span style="font-family: -apple-system, sans-serif; font-size: 13px; color: #666;">&#10003;&nbsp; Socratic method &mdash; guides breakthroughs, never just gives answers</span>
+                                <span style="font-family: -apple-system, sans-serif; font-size: 13px; color: #666;">&#10003;&nbsp; Spot patterns that cost your district TIA dollars</span>
                             </td>
                         </tr>
                         <tr>
                             <td style="padding: 0 0 6px 0;">
-                                <span style="font-family: -apple-system, sans-serif; font-size: 13px; color: #666;">&#10003;&nbsp; TSIA2 Math &amp; ELAR aligned, available 24/7</span>
+                                <span style="font-family: -apple-system, sans-serif; font-size: 13px; color: #666;">&#10003;&nbsp; Get a clear report you can act on</span>
                             </td>
                         </tr>
                         <tr>
                             <td style="padding: 0 0 6px 0;">
-                                <span style="font-family: -apple-system, sans-serif; font-size: 13px; color: #666;">&#10003;&nbsp; Zero additional teacher burden</span>
+                                <span style="font-family: -apple-system, sans-serif; font-size: 13px; color: #666;">&#10003;&nbsp; Completely free &mdash; no obligation</span>
                             </td>
                         </tr>
                     </table>
                 </td></tr>
                 <tr><td style="padding: 20px 28px 28px;">
-                    <a href="{_wrap_click_url(click_tracking_base, 'https://surescore.com/services/ai-tutor') if click_tracking_base else 'https://surescore.com/services/ai-tutor'}" style="display: inline-block; padding: 12px 28px; background-color: #d97706; color: #ffffff; font-family: -apple-system, sans-serif; font-size: 14px; font-weight: 700; text-decoration: none; border-radius: 6px;">Learn More &rarr;</a>
-                    &nbsp;&nbsp;
-                    <a href="{contact_url}" style="font-family: -apple-system, sans-serif; font-size: 13px; color: #d97706; text-decoration: underline;">Schedule a Demo</a>
+                    <a href="{tia_analysis_url}" style="display: inline-block; padding: 12px 28px; background-color: #d97706; color: #ffffff; font-family: -apple-system, sans-serif; font-size: 14px; font-weight: 700; text-decoration: none; border-radius: 6px;">Request Free Analysis &rarr;</a>
                 </td></tr>
             </table>
         </td></tr>
     """
 
-    # Ads to insert after story positions (0-indexed): after story 2 and story 4
-    ad_insertions = {2: AD_TIA, 4: AD_AI_TUTORS}
+    # CTAs to insert after story positions (0-indexed): after story 2 and story 4
+    ad_insertions = {2: CTA_SOTD_TRIAL, 4: CTA_TIA_ANALYSIS}
 
     stories_html = ""
     for i, story in enumerate(stories):
