@@ -2159,6 +2159,7 @@ def build_email_html(stories, unsubscribe_url=None, tracking_pixel_url=None, cli
     # --- CTA blocks (inserted between stories) ---
     sotd_trial_url = _wrap_click_url(click_tracking_base, 'https://surescore.com/trial/sotd') if click_tracking_base else 'https://surescore.com/trial/sotd'
     tia_analysis_url = _wrap_click_url(click_tracking_base, 'https://surescore.com/trial/tia') if click_tracking_base else 'https://surescore.com/trial/tia'
+    contact_url = _wrap_click_url(click_tracking_base, 'https://surescore.com/contact') if click_tracking_base else 'https://surescore.com/contact'
 
     CTA_SOTD_TRIAL = f"""
         <tr><td style="padding: 8px 0 32px 0;">
