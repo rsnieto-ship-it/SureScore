@@ -1,6 +1,5 @@
 "use client";
 
-import { motion } from "framer-motion";
 import Link from "next/link";
 import { Header, Footer } from "@/components/layout";
 import { Container, Button } from "@/components/ui";
@@ -14,11 +13,8 @@ export default function ResultsPage() {
         {/* Hero Section */}
         <section className="py-24 bg-gradient-to-br from-[var(--primary-800)] to-[var(--primary-600)]">
           <Container>
-            <motion.div
+            <div
               className="max-w-3xl"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
             >
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold font-[family-name:var(--font-montserrat)] text-white mb-6">
                 Proven{" "}
@@ -28,7 +24,7 @@ export default function ResultsPage() {
                 Trusted by 70+ Texas school districts since 1995. Hear from the
                 educators who partner with SureScore.
               </p>
-            </motion.div>
+            </div>
           </Container>
         </section>
 
@@ -42,18 +38,14 @@ export default function ResultsPage() {
                 { value: "3.1-pt", label: "Avg. ACT Increase" },
                 { value: "30+", label: "Years in Texas Ed" },
               ].map((stat, index) => (
-                <motion.div
+                <div
                   key={stat.label}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: index * 0.1 }}
                 >
                   <div className="text-4xl font-bold font-[family-name:var(--font-space-grotesk)] text-[var(--primary-500)] mb-2">
                     {stat.value}
                   </div>
                   <div className="text-gray-600">{stat.label}</div>
-                </motion.div>
+                </div>
               ))}
             </div>
           </Container>

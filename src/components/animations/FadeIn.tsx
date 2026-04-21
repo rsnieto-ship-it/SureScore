@@ -1,6 +1,5 @@
 "use client";
 
-import { motion } from "framer-motion";
 import { ReactNode } from "react";
 
 interface FadeInProps {
@@ -26,25 +25,10 @@ export function FadeIn({
   };
 
   return (
-    <motion.div
-      initial={{
-        opacity: 0,
-        ...directions[direction],
-      }}
-      whileInView={{
-        opacity: 1,
-        x: 0,
-        y: 0,
-      }}
-      transition={{
-        duration,
-        delay,
-        ease: [0.25, 0.4, 0.25, 1],
-      }}
-      viewport={{ once: true, margin: "-100px" }}
+    <div
       className={className}
     >
       {children}
-    </motion.div>
+    </div>
   );
 }

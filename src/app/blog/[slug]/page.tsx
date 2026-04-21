@@ -2,7 +2,6 @@
 
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { motion } from "framer-motion";
 import { ArrowLeft } from "lucide-react";
 import { Header, Footer } from "@/components/layout";
 import { Container, Card, CardContent, Button } from "@/components/ui";
@@ -42,10 +41,7 @@ export default function BlogPostPage() {
         {/* Hero Section */}
         <section className="py-16 bg-gradient-to-br from-[var(--primary-800)] to-[var(--primary-600)]">
           <Container size="md">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
+            <div
             >
               <Link
                 href="/blog"
@@ -81,18 +77,15 @@ export default function BlogPostPage() {
                   ))}
                 </div>
               )}
-            </motion.div>
+            </div>
           </Container>
         </section>
 
         {/* Content */}
         <section className="py-16 bg-white">
           <Container size="md">
-            <motion.article
+            <article
               className="prose prose-lg max-w-none"
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
             >
               {post.content.split("\n\n").map((paragraph, index) => {
                 if (paragraph.startsWith("## ")) {
@@ -145,7 +138,7 @@ export default function BlogPostPage() {
                   </p>
                 );
               })}
-            </motion.article>
+            </article>
 
             {/* Share */}
             <div className="mt-12 pt-8 border-t border-gray-200">

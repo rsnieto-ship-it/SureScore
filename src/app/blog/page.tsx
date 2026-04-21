@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import { Header, Footer } from "@/components/layout";
 import { Container, Card, CardContent } from "@/components/ui";
@@ -15,11 +14,8 @@ export default function BlogPage() {
         {/* Hero Section */}
         <section className="py-24 bg-gradient-to-br from-[var(--primary-800)] to-[var(--primary-600)]">
           <Container>
-            <motion.div
+            <div
               className="max-w-3xl"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
             >
               <span className="inline-block px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full text-white/90 text-sm font-medium mb-6">
                 Resources & Insights
@@ -32,7 +28,7 @@ export default function BlogPage() {
                 Stay informed with the latest insights on test preparation, college
                 admissions, and educational strategies.
               </p>
-            </motion.div>
+            </div>
           </Container>
         </section>
 
@@ -40,10 +36,7 @@ export default function BlogPage() {
         <section className="py-24 bg-white">
           <Container>
             {/* Featured Post */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
+            <div
               className="mb-16"
             >
               <Link href={`/blog/${blogPosts[0].slug}`}>
@@ -79,17 +72,13 @@ export default function BlogPage() {
                   </div>
                 </Card>
               </Link>
-            </motion.div>
+            </div>
 
             {/* All Posts Grid */}
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
               {blogPosts.slice(1).map((post, index) => (
-                <motion.div
+                <div
                   key={post.slug}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: index * 0.1 }}
                 >
                   <Link href={`/blog/${post.slug}`}>
                     <Card className="h-full group" hover="lift">
@@ -129,7 +118,7 @@ export default function BlogPage() {
                       </CardContent>
                     </Card>
                   </Link>
-                </motion.div>
+                </div>
               ))}
             </div>
           </Container>

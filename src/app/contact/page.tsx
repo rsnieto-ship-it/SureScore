@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { motion } from "framer-motion";
 import { Mail, Phone, MapPin, Send, CheckCircle, Building2, Calendar } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -49,11 +48,8 @@ export default function ContactPage() {
         {/* Hero Section */}
         <section className="py-24 bg-gradient-to-br from-[var(--primary-800)] to-[var(--primary-600)]">
           <Container>
-            <motion.div
+            <div
               className="max-w-3xl"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
             >
               <span className="inline-block px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full text-white/90 text-sm font-medium mb-6">
                 Connect With Us
@@ -66,7 +62,7 @@ export default function ContactPage() {
                 Ready to boost your district&apos;s CCMR rating? Schedule a demo to see
                 how SureScore can help your students become college ready.
               </p>
-            </motion.div>
+            </div>
           </Container>
         </section>
 
@@ -75,11 +71,8 @@ export default function ContactPage() {
           <Container>
             <div className="grid lg:grid-cols-3 gap-12">
               {/* Contact Info */}
-              <motion.div
+              <div
                 className="lg:col-span-1"
-                initial={{ opacity: 0, x: -20 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
               >
                 <h2 className="text-2xl font-bold font-[family-name:var(--font-montserrat)] text-gray-900 mb-6">
                   Contact Our District Partnerships Team
@@ -157,15 +150,11 @@ export default function ContactPage() {
                     </Card>
                   </Link>
                 </div>
-              </motion.div>
+              </div>
 
               {/* Contact Form */}
-              <motion.div
+              <div
                 className="lg:col-span-2"
-                initial={{ opacity: 0, x: 20 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: 0.2 }}
               >
                 <Card variant="elevated">
                   <CardContent className="p-8">
@@ -346,7 +335,7 @@ export default function ContactPage() {
                     )}
                   </CardContent>
                 </Card>
-              </motion.div>
+              </div>
             </div>
           </Container>
         </section>

@@ -1,6 +1,5 @@
 "use client";
 
-import { motion } from "framer-motion";
 import { Header, Footer } from "@/components/layout";
 import { Container, Card, CardContent, Button } from "@/components/ui";
 
@@ -42,11 +41,8 @@ export default function DonatePage() {
         {/* Hero Section */}
         <section className="py-24 bg-gradient-to-br from-[var(--primary-800)] to-[var(--secondary-600)]">
           <Container>
-            <motion.div
+            <div
               className="max-w-3xl mx-auto text-center"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
             >
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold font-[family-name:var(--font-montserrat)] text-white mb-6">
                 Support Student{" "}
@@ -56,7 +52,7 @@ export default function DonatePage() {
                 Your donation helps provide quality test preparation to students
                 who might not otherwise have access. Every dollar makes a difference.
               </p>
-            </motion.div>
+            </div>
           </Container>
         </section>
 
@@ -65,18 +61,14 @@ export default function DonatePage() {
           <Container>
             <div className="grid md:grid-cols-3 gap-8 text-center">
               {impactStats.map((stat, index) => (
-                <motion.div
+                <div
                   key={stat.label}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: index * 0.1 }}
                 >
                   <div className="text-4xl font-bold font-[family-name:var(--font-space-grotesk)] text-white mb-2">
                     {stat.value}
                   </div>
                   <div className="text-[var(--secondary-300)]">{stat.label}</div>
-                </motion.div>
+                </div>
               ))}
             </div>
           </Container>
@@ -85,11 +77,8 @@ export default function DonatePage() {
         {/* Donation Tiers */}
         <section className="py-24 bg-white">
           <Container>
-            <motion.div
+            <div
               className="text-center max-w-3xl mx-auto mb-16"
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
             >
               <h2 className="text-3xl md:text-4xl font-bold font-[family-name:var(--font-montserrat)] text-gray-900 mb-6">
                 Make a Donation
@@ -98,16 +87,12 @@ export default function DonatePage() {
                 Choose a donation amount or enter a custom amount to support student
                 success.
               </p>
-            </motion.div>
+            </div>
 
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
               {donationTiers.map((tier, index) => (
-                <motion.div
+                <div
                   key={tier.amount}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: index * 0.1 }}
                 >
                   <Card
                     className={`h-full ${
@@ -140,15 +125,12 @@ export default function DonatePage() {
                       </Button>
                     </CardContent>
                   </Card>
-                </motion.div>
+                </div>
               ))}
             </div>
 
             {/* Custom Amount */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
+            <div
               className="max-w-md mx-auto"
             >
               <Card variant="elevated">
@@ -171,7 +153,7 @@ export default function DonatePage() {
                   </div>
                 </CardContent>
               </Card>
-            </motion.div>
+            </div>
           </Container>
         </section>
 
@@ -179,10 +161,7 @@ export default function DonatePage() {
         <section className="py-24 bg-gray-50">
           <Container>
             <div className="grid lg:grid-cols-2 gap-12 items-center">
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
+              <div
               >
                 <h2 className="text-3xl md:text-4xl font-bold font-[family-name:var(--font-montserrat)] text-gray-900 mb-6">
                   Why Your Support Matters
@@ -206,12 +185,8 @@ export default function DonatePage() {
                     </li>
                   ))}
                 </ul>
-              </motion.div>
-              <motion.div
-                initial={{ opacity: 0, x: 20 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: 0.2 }}
+              </div>
+              <div
               >
                 <Card className="bg-[var(--primary-50)] border-[var(--primary-200)]">
                   <CardContent className="p-8">
@@ -228,7 +203,7 @@ export default function DonatePage() {
                     </Button>
                   </CardContent>
                 </Card>
-              </motion.div>
+              </div>
             </div>
           </Container>
         </section>

@@ -1,6 +1,5 @@
 "use client";
 
-import { motion } from "framer-motion";
 import { ArrowRight, ExternalLink } from "lucide-react";
 import Link from "next/link";
 import { Header, Footer } from "@/components/layout";
@@ -83,11 +82,8 @@ export default function ResourcesPage() {
         {/* Hero Section */}
         <section className="py-24 bg-gradient-to-br from-[var(--primary-800)] to-[var(--primary-600)]">
           <Container>
-            <motion.div
+            <div
               className="max-w-3xl"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
             >
               <span className="inline-block px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full text-white/90 text-sm font-medium mb-6">
                 District Resources
@@ -100,7 +96,7 @@ export default function ResourcesPage() {
                 Access guides, webinars, research, and templates to help your district
                 maximize the impact of your SureScore partnership.
               </p>
-            </motion.div>
+            </div>
           </Container>
         </section>
 
@@ -109,12 +105,8 @@ export default function ResourcesPage() {
           <Container>
             <div className="space-y-16">
               {resourceCategories.map((category, categoryIndex) => (
-                <motion.div
+                <div
                   key={category.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: categoryIndex * 0.1 }}
                 >
                   <div className="mb-8">
                     <div>
@@ -127,12 +119,8 @@ export default function ResourcesPage() {
 
                   <div className="grid md:grid-cols-2 gap-4">
                     {category.resources.map((resource, resourceIndex) => (
-                      <motion.div
+                      <div
                         key={resource.title}
-                        initial={{ opacity: 0, y: 10 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                        transition={{ delay: (categoryIndex * 0.1) + (resourceIndex * 0.05) }}
                       >
                         <Card hover="lift" className="cursor-pointer">
                           <CardContent className="p-4 flex items-center justify-between">
@@ -148,10 +136,10 @@ export default function ResourcesPage() {
                             </div>
                           </CardContent>
                         </Card>
-                      </motion.div>
+                      </div>
                     ))}
                   </div>
-                </motion.div>
+                </div>
               ))}
             </div>
           </Container>
@@ -160,11 +148,8 @@ export default function ResourcesPage() {
         {/* Upcoming Webinars */}
         <section className="py-24 bg-gray-50">
           <Container>
-            <motion.div
+            <div
               className="text-center mb-16"
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
             >
               <span className="inline-block px-4 py-2 bg-[var(--secondary-100)] text-[var(--secondary-600)] rounded-full text-sm font-medium mb-4">
                 Live Events
@@ -176,16 +161,12 @@ export default function ResourcesPage() {
                 Join live sessions with district leaders and SureScore experts to learn
                 best practices and ask questions.
               </p>
-            </motion.div>
+            </div>
 
             <div className="grid md:grid-cols-3 gap-6">
               {upcomingWebinars.map((webinar, index) => (
-                <motion.div
+                <div
                   key={webinar.title}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: index * 0.1 }}
                 >
                   <Card className="h-full" hover="lift">
                     <CardContent className="p-6">
@@ -202,7 +183,7 @@ export default function ResourcesPage() {
                       </Button>
                     </CardContent>
                   </Card>
-                </motion.div>
+                </div>
               ))}
             </div>
           </Container>
@@ -212,10 +193,7 @@ export default function ResourcesPage() {
         <section className="py-24 bg-white">
           <Container>
             <div className="grid lg:grid-cols-2 gap-12 items-center">
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
+              <div
               >
                 <h2 className="text-3xl md:text-4xl font-bold font-[family-name:var(--font-montserrat)] text-gray-900 mb-6">
                   Partner District Portal
@@ -249,12 +227,8 @@ export default function ResourcesPage() {
                     <ArrowRight className="ml-2 w-5 h-5" />
                   </Button>
                 </a>
-              </motion.div>
-              <motion.div
-                initial={{ opacity: 0, x: 20 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: 0.2 }}
+              </div>
+              <div
               >
                 <Card variant="gradient" className="p-8">
                   <div className="text-center">
@@ -269,7 +243,7 @@ export default function ResourcesPage() {
                     </Link>
                   </div>
                 </Card>
-              </motion.div>
+              </div>
             </div>
           </Container>
         </section>

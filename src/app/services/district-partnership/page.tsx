@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { motion } from "framer-motion";
 import { ArrowRight, CheckCircle } from "lucide-react";
 import { Header, Footer } from "@/components/layout";
 import { Container, Card, CardContent, Button } from "@/components/ui";
@@ -16,10 +15,7 @@ export default function DistrictPartnershipPage() {
         <section className="py-24 bg-gradient-to-br from-[var(--primary-800)] to-[var(--primary-600)]">
           <Container>
             <div className="grid lg:grid-cols-2 gap-12 items-center">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
+              <div
               >
                 <Link
                   href="/services"
@@ -45,11 +41,8 @@ export default function DistrictPartnershipPage() {
                     </Button>
                   </Link>
                 </div>
-              </motion.div>
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.5, delay: 0.2 }}
+              </div>
+              <div
                 className="hidden lg:block"
               >
                 <Card variant="glass" className="p-8 text-white">
@@ -60,7 +53,7 @@ export default function DistrictPartnershipPage() {
                     <div className="text-white/80">Partner Districts</div>
                   </div>
                 </Card>
-              </motion.div>
+              </div>
             </div>
           </Container>
         </section>
@@ -68,11 +61,8 @@ export default function DistrictPartnershipPage() {
         {/* What's Included */}
         <section className="py-24 bg-white">
           <Container>
-            <motion.div
+            <div
               className="text-center max-w-3xl mx-auto mb-16"
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
             >
               <h2 className="text-3xl md:text-4xl font-bold font-[family-name:var(--font-montserrat)] text-gray-900 mb-6">
                 What&apos;s Included
@@ -81,7 +71,7 @@ export default function DistrictPartnershipPage() {
                 A District Partnership bundles our college readiness tools with
                 hands-on support so your team never has to figure it out alone.
               </p>
-            </motion.div>
+            </div>
 
             <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
               {[
@@ -106,12 +96,8 @@ export default function DistrictPartnershipPage() {
                     "TEKS-aligned, flexible curriculum materials adapted to your district's specific needs, timelines, and student population.",
                 },
               ].map((item, index) => (
-                <motion.div
+                <div
                   key={item.title}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: index * 0.1 }}
                 >
                   <Card className="h-full" hover="lift">
                     <CardContent className="p-8">
@@ -121,7 +107,7 @@ export default function DistrictPartnershipPage() {
                       <p className="text-gray-600 text-sm">{item.description}</p>
                     </CardContent>
                   </Card>
-                </motion.div>
+                </div>
               ))}
             </div>
           </Container>
@@ -131,10 +117,7 @@ export default function DistrictPartnershipPage() {
         <section className="py-24 bg-gray-50">
           <Container>
             <div className="grid lg:grid-cols-2 gap-12">
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
+              <div
               >
                 <h2 className="text-3xl md:text-4xl font-bold font-[family-name:var(--font-montserrat)] text-gray-900 mb-6">
                   Why Partner?
@@ -158,12 +141,8 @@ export default function DistrictPartnershipPage() {
                     </li>
                   ))}
                 </ul>
-              </motion.div>
-              <motion.div
-                initial={{ opacity: 0, x: 20 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: 0.2 }}
+              </div>
+              <div
               >
                 <h2 className="text-3xl md:text-4xl font-bold font-[family-name:var(--font-montserrat)] text-gray-900 mb-6">
                   Implementation
@@ -187,7 +166,7 @@ export default function DistrictPartnershipPage() {
                     </li>
                   ))}
                 </ul>
-              </motion.div>
+              </div>
             </div>
           </Container>
         </section>
@@ -195,11 +174,8 @@ export default function DistrictPartnershipPage() {
         {/* Contact Section */}
         <section className="py-24 bg-white">
           <Container>
-            <motion.div
+            <div
               className="max-w-2xl mx-auto text-center"
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
             >
               <h2 className="text-3xl md:text-4xl font-bold font-[family-name:var(--font-montserrat)] text-gray-900 mb-6">
                 Ready to Partner with SureScore?
@@ -228,7 +204,7 @@ export default function DistrictPartnershipPage() {
                   <ArrowRight className="ml-2 w-5 h-5" />
                 </Button>
               </Link>
-            </motion.div>
+            </div>
           </Container>
         </section>
 

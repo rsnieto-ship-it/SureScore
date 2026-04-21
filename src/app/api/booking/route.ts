@@ -18,7 +18,7 @@ export async function POST(request: Request) {
     const data = parsed.data;
 
     // Save form submission (no contact upsert — these are parents/students)
-    await prisma.formSubmission.create({
+    const submission = await prisma.formSubmission.create({
       data: {
         formType: "BOOKING",
         email: data.email,
@@ -27,18 +27,26 @@ export async function POST(request: Request) {
     });
 
     // Send notification email
-    await sendNotification(
-      `New Booking from ${data.parentName} for ${data.studentName}`,
-      `<h2>New Consultation Booking</h2>
-       <p><strong>Student:</strong> ${data.studentName}</p>
-       <p><strong>Parent/Guardian:</strong> ${data.parentName}</p>
-       <p><strong>Email:</strong> ${data.email}</p>
-       <p><strong>Phone:</strong> ${data.phone}</p>
-       <p><strong>Program:</strong> ${data.program}</p>
-       <p><strong>Grade:</strong> ${data.grade}</p>
-       <p><strong>Preferred Time:</strong> ${data.preferredTime}</p>
-       <p><strong>Notes:</strong> ${data.notes || "None"}</p>`
-    ).catch((err) => console.error("Failed to send notification:", err));
+    try {
+      await sendNotification(
+        `New Booking from ${data.parentName} for ${data.studentName}`,
+        `<h2>New Consultation Booking</h2>
+         <p><strong>Student:</strong> ${data.studentName}</p>
+         <p><strong>Parent/Guardian:</strong> ${data.parentName}</p>
+         <p><strong>Email:</strong> ${data.email}</p>
+         <p><strong>Phone:</strong> ${data.phone}</p>
+         <p><strong>Program:</strong> ${data.program}</p>
+         <p><strong>Grade:</strong> ${data.grade}</p>
+         <p><strong>Preferred Time:</strong> ${data.preferredTime}</p>
+         <p><strong>Notes:</strong> ${data.notes || "None"}</p>`
+      );
+      await prisma.formSubmission.update({
+        where: { id: submission.id },
+        data: { notified: true },
+      });
+    } catch (err) {
+      console.error("Failed to send notification:", err);
+    }
 
     return NextResponse.json({ success: true });
   } catch {

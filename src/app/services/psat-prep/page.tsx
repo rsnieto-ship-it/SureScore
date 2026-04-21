@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { motion } from "framer-motion";
 import { ArrowRight, CheckCircle } from "lucide-react";
 import { Header, Footer } from "@/components/layout";
 import { Container, Card, CardContent, Button } from "@/components/ui";
@@ -16,10 +15,7 @@ export default function PSATPrepPage() {
         <section className="py-24 bg-gradient-to-br from-[var(--primary-800)] to-[var(--primary-600)]">
           <Container>
             <div className="grid lg:grid-cols-2 gap-12 items-center">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
+              <div
               >
                 <Link
                   href="/services"
@@ -52,11 +48,8 @@ export default function PSATPrepPage() {
                     </Button>
                   </Link>
                 </div>
-              </motion.div>
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.5, delay: 0.2 }}
+              </div>
+              <div
                 className="hidden lg:block"
               >
                 <Card variant="glass" className="p-8 text-white text-center">
@@ -65,7 +58,7 @@ export default function PSATPrepPage() {
                   </div>
                   <div className="text-white/80">Scholarship Qualifier</div>
                 </Card>
-              </motion.div>
+              </div>
             </div>
           </Container>
         </section>
@@ -74,10 +67,7 @@ export default function PSATPrepPage() {
         <section className="py-24 bg-white">
           <Container>
             <div className="grid lg:grid-cols-2 gap-12 items-center">
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
+              <div
               >
                 <h2 className="text-3xl md:text-4xl font-bold font-[family-name:var(--font-montserrat)] text-gray-900 mb-6">
                   Why PSAT Preparation Matters
@@ -101,12 +91,8 @@ export default function PSATPrepPage() {
                     </li>
                   ))}
                 </ul>
-              </motion.div>
-              <motion.div
-                initial={{ opacity: 0, x: 20 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: 0.2 }}
+              </div>
+              <div
               >
                 <Card className="bg-[var(--primary-50)] border-[var(--primary-200)]">
                   <CardContent className="p-8">
@@ -131,7 +117,7 @@ export default function PSATPrepPage() {
                     </div>
                   </CardContent>
                 </Card>
-              </motion.div>
+              </div>
             </div>
           </Container>
         </section>
@@ -139,11 +125,8 @@ export default function PSATPrepPage() {
         {/* Classroom Program */}
         <section className="py-24 bg-gray-50">
           <Container>
-            <motion.div
+            <div
               className="text-center max-w-3xl mx-auto mb-16"
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
             >
               <h2 className="text-3xl md:text-4xl font-bold font-[family-name:var(--font-montserrat)] text-gray-900 mb-6">
                 Classroom Delivery Model
@@ -152,7 +135,7 @@ export default function PSATPrepPage() {
                 Our PSAT prep is designed to integrate seamlessly into your
                 school&apos;s schedule.
               </p>
-            </motion.div>
+            </div>
 
             <div className="grid md:grid-cols-3 gap-8">
               {[
@@ -172,12 +155,8 @@ export default function PSATPrepPage() {
                     "Students learn together, building community while preparing for success.",
                 },
               ].map((feature, index) => (
-                <motion.div
+                <div
                   key={feature.title}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: index * 0.1 }}
                 >
                   <Card className="h-full text-center" hover="lift">
                     <CardContent className="p-8">
@@ -187,7 +166,7 @@ export default function PSATPrepPage() {
                       <p className="text-gray-600">{feature.description}</p>
                     </CardContent>
                   </Card>
-                </motion.div>
+                </div>
               ))}
             </div>
           </Container>

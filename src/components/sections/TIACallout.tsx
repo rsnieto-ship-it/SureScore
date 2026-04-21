@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import { Container, Card, CardContent } from "@/components/ui";
 
@@ -9,11 +8,8 @@ export function TIACallout() {
   return (
     <section className="py-24 bg-gray-50">
       <Container>
-        <motion.div
+        <div
           className="text-center max-w-3xl mx-auto mb-16"
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
         >
           <h2 className="text-3xl md:text-4xl font-bold font-[family-name:var(--font-montserrat)] text-gray-900 mb-6">
             Two Platforms.{" "}
@@ -24,14 +20,11 @@ export function TIACallout() {
             teachers &mdash; but managing both without the right tools is
             overwhelming. SureScore makes it simple.
           </p>
-        </motion.div>
+        </div>
 
         <div className="grid md:grid-cols-3 gap-8 items-center max-w-5xl mx-auto">
           {/* Student Achievement */}
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
+          <div
           >
             <Link href="/services/ai-tutor" className="block group">
               <Card className="h-full" hover="lift">
@@ -49,15 +42,11 @@ export function TIACallout() {
                 </CardContent>
               </Card>
             </Link>
-          </motion.div>
+          </div>
 
           {/* Connection */}
-          <motion.div
+          <div
             className="flex flex-col items-center gap-4"
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.15 }}
           >
             <div className="text-center">
               <p className="font-bold text-gray-900 text-sm">
@@ -67,13 +56,10 @@ export function TIACallout() {
                 TIA data reveals where prep is needed most.
               </p>
             </div>
-          </motion.div>
+          </div>
 
           {/* Teacher Excellence */}
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
+          <div
           >
             <Link href="/services/tia-platform" className="block group">
               <Card className="h-full" hover="lift">
@@ -91,23 +77,19 @@ export function TIACallout() {
                 </CardContent>
               </Card>
             </Link>
-          </motion.div>
+          </div>
         </div>
 
         {/* The Pitch */}
-        <motion.div
+        <div
           className="mt-16 max-w-3xl mx-auto text-center"
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ delay: 0.3 }}
         >
           <blockquote className="text-xl md:text-2xl font-medium text-gray-800 italic font-[family-name:var(--font-montserrat)] leading-relaxed">
             &ldquo;We don&apos;t just help your students pass the test &mdash;
             we help you identify, reward, and keep the teachers who made it
             possible.&rdquo;
           </blockquote>
-        </motion.div>
+        </div>
       </Container>
     </section>
   );

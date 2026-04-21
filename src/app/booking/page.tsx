@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { motion } from "framer-motion";
 import { CheckCircle, ArrowRight } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -48,11 +47,8 @@ export default function BookingPage() {
         {/* Hero Section */}
         <section className="py-24 bg-gradient-to-br from-[var(--primary-800)] to-[var(--secondary-600)]">
           <Container>
-            <motion.div
+            <div
               className="max-w-3xl mx-auto text-center"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
             >
               <span className="inline-block px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full text-white/90 text-sm font-medium mb-6">
                 Free Consultation
@@ -65,7 +61,7 @@ export default function BookingPage() {
                 Schedule a free consultation to discuss your goals and find the
                 perfect program for your needs.
               </p>
-            </motion.div>
+            </div>
           </Container>
         </section>
 
@@ -74,11 +70,8 @@ export default function BookingPage() {
           <Container>
             <div className="grid lg:grid-cols-3 gap-12">
               {/* What to Expect */}
-              <motion.div
+              <div
                 className="lg:col-span-1"
-                initial={{ opacity: 0, x: -20 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
               >
                 <h2 className="text-2xl font-bold font-[family-name:var(--font-montserrat)] text-gray-900 mb-6">
                   What to Expect
@@ -129,15 +122,11 @@ export default function BookingPage() {
                     </a>
                   </CardContent>
                 </Card>
-              </motion.div>
+              </div>
 
               {/* Booking Form */}
-              <motion.div
+              <div
                 className="lg:col-span-2"
-                initial={{ opacity: 0, x: 20 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: 0.2 }}
               >
                 <Card variant="elevated">
                   <CardContent className="p-8">
@@ -336,7 +325,7 @@ export default function BookingPage() {
                     )}
                   </CardContent>
                 </Card>
-              </motion.div>
+              </div>
             </div>
           </Container>
         </section>

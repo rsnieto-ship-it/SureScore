@@ -1,6 +1,5 @@
 "use client";
 
-import { motion } from "framer-motion";
 import { Container, Card, CardContent } from "@/components/ui";
 import { testimonials } from "@/content/testimonials";
 
@@ -9,12 +8,8 @@ export function Testimonials() {
     <section className="py-24 bg-white">
       <Container>
         {/* Section Header */}
-        <motion.div
+        <div
           className="text-center max-w-3xl mx-auto mb-16"
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5 }}
         >
           <span className="inline-block px-4 py-2 bg-[var(--secondary-100)] text-[var(--secondary-600)] rounded-full text-sm font-medium mb-4">
             District Success
@@ -27,17 +22,13 @@ export function Testimonials() {
             Hear from superintendents and administrators who have transformed their
             district&apos;s college readiness outcomes with SureScore.
           </p>
-        </motion.div>
+        </div>
 
         {/* Testimonials Grid */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {testimonials.map((testimonial, index) => (
-            <motion.div
+            <div
               key={testimonial.id}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: index * 0.1 }}
             >
               <Card className="h-full" variant="elevated" hover="lift">
                 <CardContent className="p-6">
@@ -62,7 +53,7 @@ export function Testimonials() {
                   </div>
                 </CardContent>
               </Card>
-            </motion.div>
+            </div>
           ))}
         </div>
       </Container>

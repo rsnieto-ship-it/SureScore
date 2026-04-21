@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { motion } from "framer-motion";
 import {
   ExternalLink,
   ArrowRight,
@@ -88,11 +87,8 @@ export default function CollegeToolsPage() {
         {/* Hero Section */}
         <section className="py-24 bg-gradient-to-br from-[var(--primary-800)] to-[var(--primary-600)]">
           <Container>
-            <motion.div
+            <div
               className="max-w-3xl"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
             >
               <span className="inline-block px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full text-white/90 text-sm font-medium mb-6">
                 Resources
@@ -105,18 +101,15 @@ export default function CollegeToolsPage() {
                 Free resources to help you navigate the college preparation and
                 application process successfully.
               </p>
-            </motion.div>
+            </div>
           </Container>
         </section>
 
         {/* Tools Grid */}
         <section className="py-24 bg-white">
           <Container>
-            <motion.div
+            <div
               className="text-center max-w-3xl mx-auto mb-16"
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
             >
               <h2 className="text-3xl md:text-4xl font-bold font-[family-name:var(--font-montserrat)] text-gray-900 mb-6">
                 Essential Tools
@@ -124,16 +117,12 @@ export default function CollegeToolsPage() {
               <p className="text-lg text-gray-600">
                 Helpful tools and calculators to make your college journey easier.
               </p>
-            </motion.div>
+            </div>
 
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {tools.map((tool, index) => (
-                <motion.div
+                <div
                   key={tool.title}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: index * 0.1 }}
                 >
                   {tool.external ? (
                     <a href={tool.link} target="_blank" rel="noopener noreferrer">
@@ -159,7 +148,7 @@ export default function CollegeToolsPage() {
                       </Card>
                     </Link>
                   )}
-                </motion.div>
+                </div>
               ))}
             </div>
           </Container>
@@ -168,11 +157,8 @@ export default function CollegeToolsPage() {
         {/* Resource Categories */}
         <section className="py-24 bg-gray-50">
           <Container>
-            <motion.div
+            <div
               className="text-center max-w-3xl mx-auto mb-16"
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
             >
               <h2 className="text-3xl md:text-4xl font-bold font-[family-name:var(--font-montserrat)] text-gray-900 mb-6">
                 Specialized Resources
@@ -180,16 +166,12 @@ export default function CollegeToolsPage() {
               <p className="text-lg text-gray-600">
                 Targeted resources for specific audiences and needs.
               </p>
-            </motion.div>
+            </div>
 
             <div className="grid md:grid-cols-2 gap-8">
               {resources.map((resource, index) => (
-                <motion.div
+                <div
                   key={resource.title}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: index * 0.1 }}
                 >
                   <Card className="h-full" variant="elevated">
                     <CardContent className="p-8">
@@ -213,7 +195,7 @@ export default function CollegeToolsPage() {
                       </Link>
                     </CardContent>
                   </Card>
-                </motion.div>
+                </div>
               ))}
             </div>
           </Container>
@@ -222,11 +204,8 @@ export default function CollegeToolsPage() {
         {/* Diagnostic Test CTA */}
         <section className="py-24 bg-white">
           <Container size="md">
-            <motion.div
+            <div
               className="text-center"
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
             >
               <Card variant="gradient" className="p-12">
                 <h2 className="text-3xl font-bold font-[family-name:var(--font-montserrat)] text-white mb-4">
@@ -251,7 +230,7 @@ export default function CollegeToolsPage() {
                   </Button>
                 </a>
               </Card>
-            </motion.div>
+            </div>
           </Container>
         </section>
 

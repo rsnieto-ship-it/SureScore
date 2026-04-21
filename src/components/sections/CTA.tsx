@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { motion } from "framer-motion";
 import { Container, Button } from "@/components/ui";
 
 export function CTA() {
@@ -16,11 +15,7 @@ export function CTA() {
 
       <Container className="relative z-10">
         <div className="max-w-4xl mx-auto text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5 }}
+          <div
           >
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold font-[family-name:var(--font-montserrat)] text-white mb-6">
               We Don&apos;t Just Help Students Pass the Test
@@ -30,14 +25,10 @@ export function CTA() {
               possible. From AI-powered test prep to TIA data management &mdash;
               two platforms, one mission: district success.
             </p>
-          </motion.div>
+          </div>
 
-          <motion.div
+          <div
             className="flex flex-col sm:flex-row gap-4 justify-center"
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5, delay: 0.2 }}
           >
             <Link href="/contact">
               <Button
@@ -56,15 +47,11 @@ export function CTA() {
                 View Solutions
               </Button>
             </Link>
-          </motion.div>
+          </div>
 
           {/* Trust indicators */}
-          <motion.div
+          <div
             className="mt-12 pt-8 border-t border-white/20"
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5, delay: 0.4 }}
           >
             <p className="text-white/60 text-sm mb-4">Trusted by Texas school districts since 1995</p>
             <div className="flex flex-wrap justify-center gap-8 text-white/40 text-sm">
@@ -74,7 +61,7 @@ export function CTA() {
               <span>|</span>
               <span>Proven Results</span>
             </div>
-          </motion.div>
+          </div>
         </div>
       </Container>
     </section>

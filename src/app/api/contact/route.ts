@@ -3,6 +3,14 @@ import { prisma } from "@/lib/db";
 import { contactSchema } from "@/lib/schemas";
 import { sendNotification } from "@/lib/email";
 
+const INTEREST_LABELS: Record<string, string> = {
+  "ai-tutors": "AI Tutors (TSIA2, SAT, ACT Prep)",
+  "tia-platform": "TIA Data Platform",
+  "district-partnership": "District Partnership",
+  "strategy-of-the-day": "Strategy of the Day",
+  "general": "General Information",
+};
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();
@@ -18,7 +26,7 @@ export async function POST(request: Request) {
     const data = parsed.data;
 
     // Save form submission
-    await prisma.formSubmission.create({
+    const submission = await prisma.formSubmission.create({
       data: {
         formType: "CONTACT",
         email: data.email,
@@ -49,18 +57,26 @@ export async function POST(request: Request) {
     });
 
     // Send notification email
-    await sendNotification(
-      `New Demo Request from ${data.name} (${data.district})`,
-      `<h2>New Demo Request</h2>
-       <p><strong>Name:</strong> ${data.name}</p>
-       <p><strong>Email:</strong> ${data.email}</p>
-       <p><strong>Phone:</strong> ${data.phone || "N/A"}</p>
-       <p><strong>District:</strong> ${data.district}</p>
-       <p><strong>Role:</strong> ${data.role}</p>
-       <p><strong>Interest:</strong> ${data.interest}</p>
-       <p><strong>Message:</strong></p>
-       <p>${data.message}</p>`
-    ).catch((err) => console.error("Failed to send notification:", err));
+    try {
+      await sendNotification(
+        `New Demo Request from ${data.name} (${data.district})`,
+        `<h2>New Demo Request</h2>
+         <p><strong>Name:</strong> ${data.name}</p>
+         <p><strong>Email:</strong> ${data.email}</p>
+         <p><strong>Phone:</strong> ${data.phone || "N/A"}</p>
+         <p><strong>District:</strong> ${data.district}</p>
+         <p><strong>Role:</strong> ${data.role}</p>
+         <p><strong>Interest:</strong> ${INTEREST_LABELS[data.interest] || data.interest}</p>
+         <p><strong>Message:</strong></p>
+         <p>${data.message}</p>`
+      );
+      await prisma.formSubmission.update({
+        where: { id: submission.id },
+        data: { notified: true },
+      });
+    } catch (err) {
+      console.error("Failed to send notification:", err);
+    }
 
     return NextResponse.json({ success: true });
   } catch {

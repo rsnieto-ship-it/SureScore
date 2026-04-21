@@ -1,7 +1,6 @@
 "use client";
 
 import Image from "next/image";
-import { motion } from "framer-motion";
 import { Header, Footer } from "@/components/layout";
 import { Container, Card, CardContent } from "@/components/ui";
 import { companyInfo } from "@/content/team";
@@ -15,11 +14,8 @@ export default function AboutPage() {
         {/* Hero Section */}
         <section className="py-24 bg-gradient-to-br from-[var(--primary-800)] to-[var(--primary-600)]">
           <Container>
-            <motion.div
+            <div
               className="max-w-3xl"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
             >
               <span className="inline-block px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full text-white/90 text-sm font-medium mb-6">
                 About SureScore
@@ -33,7 +29,7 @@ export default function AboutPage() {
                 districts improve their CCMR ratings and get more students college
                 ready through comprehensive, data-driven solutions.
               </p>
-            </motion.div>
+            </div>
           </Container>
         </section>
 
@@ -41,11 +37,7 @@ export default function AboutPage() {
         <section className="py-24 bg-white">
           <Container>
             <div className="grid lg:grid-cols-2 gap-12">
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5 }}
+              <div
               >
                 <h2 className="text-3xl font-bold font-[family-name:var(--font-montserrat)] text-gray-900 mb-6">
                   Our Mission
@@ -53,12 +45,8 @@ export default function AboutPage() {
                 <p className="text-lg text-gray-600 leading-relaxed">
                   {companyInfo.mission}
                 </p>
-              </motion.div>
-              <motion.div
-                initial={{ opacity: 0, x: 20 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: 0.2 }}
+              </div>
+              <div
               >
                 <h2 className="text-3xl font-bold font-[family-name:var(--font-montserrat)] text-gray-900 mb-6">
                   Our Vision
@@ -66,7 +54,7 @@ export default function AboutPage() {
                 <p className="text-lg text-gray-600 leading-relaxed">
                   {companyInfo.vision}
                 </p>
-              </motion.div>
+              </div>
             </div>
           </Container>
         </section>
@@ -74,11 +62,8 @@ export default function AboutPage() {
         {/* Impact Stats */}
         <section className="py-24 bg-[var(--primary-600)]">
           <Container>
-            <motion.div
+            <div
               className="text-center mb-16"
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
             >
               <h2 className="text-3xl md:text-4xl font-bold font-[family-name:var(--font-montserrat)] text-white mb-4">
                 Our Impact Across Texas
@@ -86,7 +71,7 @@ export default function AboutPage() {
               <p className="text-xl text-white/80 max-w-2xl mx-auto">
                 Measurable results that speak to our commitment to district success.
               </p>
-            </motion.div>
+            </div>
             <div className="grid md:grid-cols-4 gap-8">
               {[
                 { value: "70+", label: "Partner Districts" },
@@ -94,19 +79,15 @@ export default function AboutPage() {
                 { value: "3.1", label: "Avg. ACT Point Increase" },
                 { value: "30+", label: "Years of Excellence" },
               ].map((stat, index) => (
-                <motion.div
+                <div
                   key={stat.label}
                   className="text-center text-white"
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: index * 0.1 }}
                 >
                   <div className="text-4xl md:text-5xl font-bold font-[family-name:var(--font-space-grotesk)] mb-2">
                     {stat.value}
                   </div>
                   <div className="text-white/80">{stat.label}</div>
-                </motion.div>
+                </div>
               ))}
             </div>
           </Container>
@@ -115,12 +96,8 @@ export default function AboutPage() {
         {/* Values */}
         <section className="py-24 bg-gray-50">
           <Container>
-            <motion.div
+            <div
               className="text-center max-w-3xl mx-auto mb-16"
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5 }}
             >
               <h2 className="text-3xl md:text-4xl font-bold font-[family-name:var(--font-montserrat)] text-gray-900 mb-6">
                 Our Core Values
@@ -128,16 +105,12 @@ export default function AboutPage() {
               <p className="text-lg text-gray-600">
                 These principles guide our partnerships with Texas school districts.
               </p>
-            </motion.div>
+            </div>
 
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
               {companyInfo.values.map((value, index) => (
-                <motion.div
+                <div
                   key={value.title}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: index * 0.1 }}
                 >
                   <Card className="h-full text-center" hover="lift">
                     <CardContent className="p-8">
@@ -147,7 +120,7 @@ export default function AboutPage() {
                       <p className="text-gray-600">{value.description}</p>
                     </CardContent>
                   </Card>
-                </motion.div>
+                </div>
               ))}
             </div>
           </Container>
@@ -157,11 +130,7 @@ export default function AboutPage() {
         <section className="py-24 bg-white">
           <Container>
             <div className="grid lg:grid-cols-2 gap-12 items-center">
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5 }}
+              <div
               >
                 <div className="relative w-full max-w-md mx-auto">
                   <div className="aspect-square rounded-3xl overflow-hidden bg-gradient-to-br from-[var(--primary-400)] to-[var(--secondary-400)]">
@@ -174,12 +143,8 @@ export default function AboutPage() {
                     />
                   </div>
                 </div>
-              </motion.div>
-              <motion.div
-                initial={{ opacity: 0, x: 20 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: 0.2 }}
+              </div>
+              <div
               >
                 <span className="inline-block px-4 py-2 bg-[var(--secondary-100)] text-[var(--secondary-600)] rounded-full text-sm font-medium mb-4">
                   Our Founder
@@ -207,7 +172,7 @@ export default function AboutPage() {
                     readiness outcomes.
                   </p>
                 </div>
-              </motion.div>
+              </div>
             </div>
           </Container>
         </section>
@@ -216,11 +181,7 @@ export default function AboutPage() {
         <section className="py-24 bg-gray-50">
           <Container>
             <div className="grid lg:grid-cols-2 gap-12 items-center">
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5 }}
+              <div
               >
                 <h2 className="text-3xl md:text-4xl font-bold font-[family-name:var(--font-montserrat)] text-gray-900 mb-6">
                   Why Districts Choose SureScore
@@ -244,13 +205,9 @@ export default function AboutPage() {
                     </li>
                   ))}
                 </ul>
-              </motion.div>
-              <motion.div
+              </div>
+              <div
                 className="relative"
-                initial={{ opacity: 0, x: 20 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: 0.2 }}
               >
                 <div className="aspect-square bg-gradient-to-br from-[var(--primary-500)] to-[var(--secondary-500)] rounded-3xl flex items-center justify-center">
                   <div className="text-center text-white">
@@ -260,7 +217,7 @@ export default function AboutPage() {
                     <div className="text-xl mt-2">Years Serving Texas</div>
                   </div>
                 </div>
-              </motion.div>
+              </div>
             </div>
           </Container>
         </section>

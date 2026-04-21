@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { motion } from "framer-motion";
 import { ArrowRight, CheckCircle } from "lucide-react";
 import { Header, Footer } from "@/components/layout";
 import { Container, Card, CardContent, Button } from "@/components/ui";
@@ -16,10 +15,7 @@ export default function AdvancedPrepPage() {
         <section className="py-24 bg-gradient-to-br from-[var(--primary-900)] via-[var(--primary-800)] to-[var(--secondary-700)]">
           <Container>
             <div className="grid lg:grid-cols-2 gap-12 items-center">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
+              <div
               >
                 <Link
                   href="/services"
@@ -52,11 +48,8 @@ export default function AdvancedPrepPage() {
                     </Button>
                   </Link>
                 </div>
-              </motion.div>
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.5, delay: 0.2 }}
+              </div>
+              <div
                 className="hidden lg:block"
               >
                 <div className="grid grid-cols-2 gap-4">
@@ -77,7 +70,7 @@ export default function AdvancedPrepPage() {
                     <div className="text-white/80 text-sm">Instruction</div>
                   </Card>
                 </div>
-              </motion.div>
+              </div>
             </div>
           </Container>
         </section>
@@ -86,10 +79,7 @@ export default function AdvancedPrepPage() {
         <section className="py-24 bg-white">
           <Container>
             <div className="grid lg:grid-cols-2 gap-12 items-center">
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
+              <div
               >
                 <h2 className="text-3xl md:text-4xl font-bold font-[family-name:var(--font-montserrat)] text-gray-900 mb-6">
                   Is Advanced Prep Right for You?
@@ -112,12 +102,8 @@ export default function AdvancedPrepPage() {
                     </li>
                   ))}
                 </ul>
-              </motion.div>
-              <motion.div
-                initial={{ opacity: 0, x: 20 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: 0.2 }}
+              </div>
+              <div
               >
                 <Card className="bg-gradient-to-br from-gray-900 to-gray-800 text-white p-8">
                   <h3 className="text-2xl font-bold mb-6">Program Highlights</h3>
@@ -137,7 +123,7 @@ export default function AdvancedPrepPage() {
                     ))}
                   </ul>
                 </Card>
-              </motion.div>
+              </div>
             </div>
           </Container>
         </section>

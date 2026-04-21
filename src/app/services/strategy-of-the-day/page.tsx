@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { motion } from "framer-motion";
 import { ArrowRight, CheckCircle } from "lucide-react";
 import { Header, Footer } from "@/components/layout";
 import { Container, Card, CardContent, Button } from "@/components/ui";
@@ -16,10 +15,7 @@ export default function StrategyOfTheDayPage() {
         <section className="py-24 bg-gradient-to-br from-[var(--primary-800)] to-[var(--primary-600)]">
           <Container>
             <div className="grid lg:grid-cols-2 gap-12 items-center">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
+              <div
               >
                 <Link
                   href="/services"
@@ -50,11 +46,8 @@ export default function StrategyOfTheDayPage() {
                     </Button>
                   </Link>
                 </div>
-              </motion.div>
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.5, delay: 0.2 }}
+              </div>
+              <div
                 className="hidden lg:block"
               >
                 <Card variant="glass" className="p-8 text-white">
@@ -65,7 +58,7 @@ export default function StrategyOfTheDayPage() {
                     <div className="text-white/80">Min Daily</div>
                   </div>
                 </Card>
-              </motion.div>
+              </div>
             </div>
           </Container>
         </section>
@@ -73,11 +66,8 @@ export default function StrategyOfTheDayPage() {
         {/* Features */}
         <section className="py-24 bg-white">
           <Container>
-            <motion.div
+            <div
               className="text-center max-w-3xl mx-auto mb-16"
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
             >
               <h2 className="text-3xl md:text-4xl font-bold font-[family-name:var(--font-montserrat)] text-gray-900 mb-6">
                 How It Works
@@ -87,7 +77,7 @@ export default function StrategyOfTheDayPage() {
                 test prep experience that keeps students engaged and builds
                 college readiness skills.
               </p>
-            </motion.div>
+            </div>
 
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {[
@@ -116,12 +106,8 @@ export default function StrategyOfTheDayPage() {
                   description: "Track participation and mastery across classrooms and grade levels with teacher and administrator dashboards.",
                 },
               ].map((feature, index) => (
-                <motion.div
+                <div
                   key={feature.title}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: index * 0.1 }}
                 >
                   <Card className="h-full" hover="lift">
                     <CardContent className="p-6">
@@ -131,7 +117,7 @@ export default function StrategyOfTheDayPage() {
                       <p className="text-gray-600 text-sm">{feature.description}</p>
                     </CardContent>
                   </Card>
-                </motion.div>
+                </div>
               ))}
             </div>
           </Container>
@@ -141,10 +127,7 @@ export default function StrategyOfTheDayPage() {
         <section className="py-24 bg-gray-50">
           <Container>
             <div className="grid lg:grid-cols-2 gap-12">
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
+              <div
               >
                 <h2 className="text-3xl md:text-4xl font-bold font-[family-name:var(--font-montserrat)] text-gray-900 mb-6">
                   Why Teacher-Led Daily Practice Works
@@ -168,12 +151,8 @@ export default function StrategyOfTheDayPage() {
                     </li>
                   ))}
                 </ul>
-              </motion.div>
-              <motion.div
-                initial={{ opacity: 0, x: 20 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: 0.2 }}
+              </div>
+              <div
               >
                 <h2 className="text-3xl md:text-4xl font-bold font-[family-name:var(--font-montserrat)] text-gray-900 mb-6">
                   Implementation
@@ -197,7 +176,7 @@ export default function StrategyOfTheDayPage() {
                     </li>
                   ))}
                 </ul>
-              </motion.div>
+              </div>
             </div>
           </Container>
         </section>
@@ -212,18 +191,14 @@ export default function StrategyOfTheDayPage() {
                 { value: "Grade", label: "Wide" },
                 { value: "Daily", label: "Content" },
               ].map((stat, index) => (
-                <motion.div
+                <div
                   key={stat.label}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: index * 0.1 }}
                 >
                   <div className="text-4xl md:text-5xl font-bold font-[family-name:var(--font-space-grotesk)] mb-2">
                     {stat.value}
                   </div>
                   <div className="text-white/80">{stat.label}</div>
-                </motion.div>
+                </div>
               ))}
             </div>
           </Container>

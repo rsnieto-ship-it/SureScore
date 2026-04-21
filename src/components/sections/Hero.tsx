@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import { Container } from "@/components/ui";
 
@@ -13,74 +12,44 @@ export function Hero() {
       <div className="absolute inset-0 bg-[url('/images/hero-pattern.svg')] opacity-10" />
 
       {/* Animated shapes */}
-      <motion.div
+      <div
         className="absolute top-1/4 right-1/4 w-72 h-72 bg-white/10 rounded-full blur-3xl"
-        animate={{
-          scale: [1, 1.2, 1],
-          opacity: [0.3, 0.5, 0.3],
-        }}
-        transition={{
-          duration: 8,
-          repeat: Infinity,
-          ease: "easeInOut",
-        }}
       />
-      <motion.div
+      <div
         className="absolute bottom-1/4 left-1/4 w-96 h-96 bg-[var(--secondary-500)]/20 rounded-full blur-3xl"
-        animate={{
-          scale: [1.2, 1, 1.2],
-          opacity: [0.2, 0.4, 0.2],
-        }}
-        transition={{
-          duration: 10,
-          repeat: Infinity,
-          ease: "easeInOut",
-        }}
       />
 
       <Container className="relative z-10">
         {/* Umbrella Narrative */}
         <div className="text-center max-w-4xl mx-auto mb-16">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
+          <div
           >
             <span className="inline-block px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full text-white/90 text-sm font-medium mb-6">
               Trusted by Texas Districts Since 1995
             </span>
-          </motion.div>
+          </div>
 
-          <motion.h1
+          <h1
             className="text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold font-[family-name:var(--font-montserrat)] text-white leading-tight mb-6"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
           >
             Where{" "}
             <span className="text-[var(--secondary-300)]">Teacher Excellence</span>
             {" "}Meets{" "}
             <span className="text-[var(--secondary-300)]">Student Achievement</span>
-          </motion.h1>
+          </h1>
 
-          <motion.p
+          <p
             className="text-lg md:text-xl text-white/80 mb-10 max-w-2xl mx-auto"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
           >
             We empower Texas districts to bridge the gap between teacher
             excellence and student achievement &mdash; the two sides of district
             success.
-          </motion.p>
+          </p>
         </div>
 
         {/* Two Doors */}
-        <motion.div
+        <div
           className="grid md:grid-cols-2 gap-6 max-w-5xl mx-auto"
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.3 }}
         >
           {/* Door 1: Student Achievement */}
           <Link href="/services/ai-tutor" className="group block">
@@ -145,14 +114,11 @@ export function Hero() {
               </span>
             </div>
           </Link>
-        </motion.div>
+        </div>
 
         {/* Stats bar */}
-        <motion.div
+        <div
           className="flex flex-wrap justify-center gap-8 md:gap-12 mt-16 pt-8 border-t border-white/20 max-w-3xl mx-auto"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.5 }}
         >
           <div className="text-center">
             <div className="text-3xl font-bold font-[family-name:var(--font-space-grotesk)] text-white">
@@ -172,7 +138,7 @@ export function Hero() {
             </div>
             <div className="text-white/70 text-sm">Platforms, One Mission</div>
           </div>
-        </motion.div>
+        </div>
       </Container>
 
     </section>

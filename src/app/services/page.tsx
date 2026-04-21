@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import { Header, Footer } from "@/components/layout";
 import { Container, Card, CardContent, Button } from "@/components/ui";
@@ -16,11 +15,8 @@ export default function ServicesPage() {
         {/* Hero Section */}
         <section className="py-24 bg-gradient-to-br from-[var(--primary-800)] to-[var(--primary-600)]">
           <Container>
-            <motion.div
+            <div
               className="max-w-3xl"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
             >
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold font-[family-name:var(--font-montserrat)] text-white mb-6">
                 Solutions for{" "}
@@ -30,7 +26,7 @@ export default function ServicesPage() {
                 From AI-powered test prep to Teacher Incentive Allotment data
                 management — two platforms, one mission: district success.
               </p>
-            </motion.div>
+            </div>
           </Container>
         </section>
 
@@ -39,12 +35,8 @@ export default function ServicesPage() {
           <Container>
             <div className="space-y-16 max-w-4xl mx-auto">
               {services.map((service, index) => (
-                <motion.div
+                <div
                   key={service.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.5 }}
                 >
                   <h2 className="text-3xl md:text-4xl font-bold font-[family-name:var(--font-montserrat)] text-gray-900 mb-4">
                     {service.title}
@@ -71,7 +63,7 @@ export default function ServicesPage() {
                   {index < services.length - 1 && (
                     <hr className="mt-16 border-gray-100" />
                   )}
-                </motion.div>
+                </div>
               ))}
             </div>
           </Container>
@@ -80,12 +72,8 @@ export default function ServicesPage() {
         {/* Process Section */}
         <section className="py-24 bg-gray-50">
           <Container>
-            <motion.div
+            <div
               className="text-center max-w-3xl mx-auto mb-16"
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5 }}
             >
               <h2 className="text-3xl md:text-4xl font-bold font-[family-name:var(--font-montserrat)] text-gray-900 mb-6">
                 How We Partner with Districts
@@ -94,7 +82,7 @@ export default function ServicesPage() {
                 Our proven process ensures seamless implementation and measurable
                 improvements in your district&apos;s outcomes.
               </p>
-            </motion.div>
+            </div>
 
             <div className="grid md:grid-cols-4 gap-8">
               {[
@@ -123,12 +111,8 @@ export default function ServicesPage() {
                     "Continuous support, progress monitoring, and strategy refinement.",
                 },
               ].map((item, index) => (
-                <motion.div
+                <div
                   key={item.step}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: index * 0.1 }}
                   className="text-center"
                 >
                   <div className="text-5xl font-bold font-[family-name:var(--font-space-grotesk)] text-[var(--primary-200)] mb-4">
@@ -138,7 +122,7 @@ export default function ServicesPage() {
                     {item.title}
                   </h3>
                   <p className="text-gray-600">{item.description}</p>
-                </motion.div>
+                </div>
               ))}
             </div>
           </Container>

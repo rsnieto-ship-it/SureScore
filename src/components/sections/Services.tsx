@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import { Container, Card, CardContent } from "@/components/ui";
 import { services } from "@/content/services";
@@ -11,12 +10,8 @@ export function Services() {
     <section className="py-24 bg-gray-50">
       <Container>
         {/* Section Header */}
-        <motion.div
+        <div
           className="text-center max-w-3xl mx-auto mb-16"
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5 }}
         >
           <span className="inline-block px-4 py-2 bg-[var(--primary-100)] text-[var(--primary-600)] rounded-full text-sm font-medium mb-4">
             Our Solutions
@@ -28,17 +23,13 @@ export function Services() {
             From AI-powered test prep to Teacher Incentive Allotment data
             management — built for Texas districts.
           </p>
-        </motion.div>
+        </div>
 
         {/* Services Grid - 2x2 */}
         <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
           {services.map((service, index) => (
-            <motion.div
+            <div
               key={service.id}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: index * 0.1 }}
             >
               <Link href={service.href}>
                 <Card className="h-full group cursor-pointer" hover="lift">
@@ -54,7 +45,7 @@ export function Services() {
                   </CardContent>
                 </Card>
               </Link>
-            </motion.div>
+            </div>
           ))}
         </div>
       </Container>

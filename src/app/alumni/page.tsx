@@ -1,6 +1,5 @@
 "use client";
 
-import { motion } from "framer-motion";
 import { Header, Footer } from "@/components/layout";
 import { Container, Card, CardContent } from "@/components/ui";
 import { CTA } from "@/components/sections";
@@ -79,11 +78,8 @@ export default function AlumniPage() {
         {/* Hero Section */}
         <section className="py-24 bg-gradient-to-br from-[var(--primary-800)] to-[var(--primary-600)]">
           <Container>
-            <motion.div
+            <div
               className="max-w-3xl mx-auto text-center"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
             >
               <span className="inline-block px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full text-white/90 text-sm font-medium mb-6">
                 Success Stories
@@ -96,7 +92,7 @@ export default function AlumniPage() {
                 Meet the students who achieved their goals with SureScore and went
                 on to attend top universities across the nation.
               </p>
-            </motion.div>
+            </div>
           </Container>
         </section>
 
@@ -110,12 +106,8 @@ export default function AlumniPage() {
                 { value: "95%", label: "Goal Achievement Rate" },
                 { value: "100+", label: "Universities Attended" },
               ].map((stat, index) => (
-                <motion.div
+                <div
                   key={stat.label}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: index * 0.1 }}
                 >
                   <div className="text-3xl md:text-4xl font-bold font-[family-name:var(--font-space-grotesk)] text-white mb-1">
                     {stat.value}
@@ -123,7 +115,7 @@ export default function AlumniPage() {
                   <div className="text-[var(--secondary-300)] text-sm">
                     {stat.label}
                   </div>
-                </motion.div>
+                </div>
               ))}
             </div>
           </Container>
@@ -132,11 +124,8 @@ export default function AlumniPage() {
         {/* Success Stories */}
         <section className="py-24 bg-white">
           <Container>
-            <motion.div
+            <div
               className="text-center max-w-3xl mx-auto mb-16"
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
             >
               <h2 className="text-3xl md:text-4xl font-bold font-[family-name:var(--font-montserrat)] text-gray-900 mb-6">
                 Student Success Stories
@@ -144,16 +133,12 @@ export default function AlumniPage() {
               <p className="text-lg text-gray-600">
                 Real stories from real students who achieved their dreams with SureScore.
               </p>
-            </motion.div>
+            </div>
 
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
               {successStories.map((story, index) => (
-                <motion.div
+                <div
                   key={story.name}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: index * 0.1 }}
                 >
                   <Card className="h-full" hover="lift">
                     <CardContent className="p-6">
@@ -183,7 +168,7 @@ export default function AlumniPage() {
                       </div>
                     </CardContent>
                   </Card>
-                </motion.div>
+                </div>
               ))}
             </div>
           </Container>
@@ -192,11 +177,8 @@ export default function AlumniPage() {
         {/* Universities */}
         <section className="py-24 bg-gray-50">
           <Container>
-            <motion.div
+            <div
               className="text-center max-w-3xl mx-auto mb-16"
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
             >
               <h2 className="text-3xl md:text-4xl font-bold font-[family-name:var(--font-montserrat)] text-gray-900 mb-6">
                 Where Our Students Go
@@ -204,22 +186,18 @@ export default function AlumniPage() {
               <p className="text-lg text-gray-600">
                 SureScore alumni attend top universities across the country.
               </p>
-            </motion.div>
+            </div>
 
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6">
               {collegeLogos.map((college, index) => (
-                <motion.div
+                <div
                   key={college}
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  whileInView={{ opacity: 1, scale: 1 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: index * 0.05 }}
                   className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow text-center"
                 >
                   <span className="text-sm text-gray-600 font-medium">
                     {college}
                   </span>
-                </motion.div>
+                </div>
               ))}
             </div>
           </Container>
