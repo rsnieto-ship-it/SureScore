@@ -30,3 +30,23 @@ export const subscribeSchema = z.object({
 });
 
 export type SubscribeFormData = z.infer<typeof subscribeSchema>;
+
+export const sotdTrialSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters"),
+  email: z.string().email("Please enter a valid email"),
+  district: z.string().min(2, "Please enter your district name"),
+  subject: z.enum(["math", "elar"], { message: "Please select Math or ELAR" }),
+  startDate: z.string().min(1, "Please select a preferred start date"),
+  notes: z.string().optional(),
+});
+
+export type SotdTrialFormData = z.infer<typeof sotdTrialSchema>;
+
+export const tiaAnalysisSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters"),
+  email: z.string().email("Please enter a valid email"),
+  district: z.string().min(2, "Please enter your district name"),
+  notes: z.string().optional(),
+});
+
+export type TiaAnalysisFormData = z.infer<typeof tiaAnalysisSchema>;

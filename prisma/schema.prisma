@@ -58,6 +58,8 @@ model FormSubmission {
 enum FormType {
   CONTACT
   BOOKING
+  SOTD_TRIAL
+  TIA_ANALYSIS
 }
 
 model DigestOpen {
