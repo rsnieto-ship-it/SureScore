@@ -2,11 +2,11 @@ name: "Digest — Tuesday Send All"
 
 on:
   schedule:
-    # Fire at both possible UTC times for 7:45 AM Central:
-    # 12:45 UTC = 7:45 AM CDT (March–November)
-    # 13:45 UTC = 7:45 AM CST (November–March)
-    - cron: "45 12 * * 2"
-    - cron: "45 13 * * 2"
+    # Fire at both possible UTC times for 7:00 AM Central:
+    # 12:00 UTC = 7:00 AM CDT (March–November)
+    # 13:00 UTC = 7:00 AM CST (November–March)
+    - cron: "0 12 * * 2"
+    - cron: "0 13 * * 2"
   workflow_dispatch: # Allow manual trigger from GitHub UI
 
 jobs:
@@ -17,7 +17,7 @@ jobs:
         working-directory: digest-script
 
     steps:
-      - name: Check if it's 7:45 AM Central Time
+      - name: Check if it's 7:00 AM Central Time
         id: tz-check
         run: |
           CENTRAL_HOUR=$(TZ="America/Chicago" date +%H)
