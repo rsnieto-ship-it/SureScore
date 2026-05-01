@@ -2,11 +2,10 @@ name: "Digest — Monday Preview"
 
 on:
   schedule:
-    # Fire at both possible UTC times for 8:00 AM Central:
-    # 13:00 UTC = 8:00 AM CDT (March–November)
-    # 14:00 UTC = 8:00 AM CST (November–March)
+    # 13:00 UTC Monday = 8:00 AM CDT / 7:00 AM CST. GH Actions cron can
+    # drift up to ~3 hours late, so the window gate below accepts hours
+    # 7–11 CT.
     - cron: "0 13 * * 1"
-    - cron: "0 14 * * 1"
   workflow_dispatch: # Allow manual trigger from GitHub UI
 
 jobs:
@@ -17,14 +16,14 @@ jobs:
         working-directory: digest-script
 
     steps:
-      - name: Check if it's 8 AM Central Time
+      - name: Check Central time is in morning window
         id: tz-check
         working-directory: .
         run: |
-          CENTRAL_HOUR=$(TZ="America/Chicago" date +%H)
+          CENTRAL_HOUR=$((10#$(TZ="America/Chicago" date +%H)))
           echo "Central time hour: $CENTRAL_HOUR"
-          if [ "$CENTRAL_HOUR" != "08" ]; then
-            echo "Not 8 AM Central — skipping (DST mismatch). Hour is $CENTRAL_HOUR."
+          if [ "$CENTRAL_HOUR" -lt 7 ] || [ "$CENTRAL_HOUR" -gt 11 ]; then
+            echo "Outside 7–11 CT window — skipping. Hour is $CENTRAL_HOUR."
             echo "skip=true" >> "$GITHUB_OUTPUT"
           else
             echo "skip=false" >> "$GITHUB_OUTPUT"

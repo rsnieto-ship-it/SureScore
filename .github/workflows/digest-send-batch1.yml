@@ -2,11 +2,11 @@ name: "Digest — Tuesday Send All"
 
 on:
   schedule:
-    # Fire at both possible UTC times for 7:45 AM Central:
-    # 12:45 UTC = 7:45 AM CDT (March–November)
-    # 13:45 UTC = 7:45 AM CST (November–March)
+    # 12:45 UTC Tuesday = 7:45 AM CDT / 6:45 AM CST. GH Actions cron can
+    # drift up to ~3 hours late, so the window gate below accepts hours
+    # 6–10 CT. DigestSendLog provides per-recipient idempotency, and the
+    # script enforces a Tuesday-only guard for --send-all.
     - cron: "45 12 * * 2"
-    - cron: "45 13 * * 2"
   workflow_dispatch: # Allow manual trigger from GitHub UI
 
 jobs:
@@ -17,13 +17,13 @@ jobs:
         working-directory: digest-script
 
     steps:
-      - name: Check if it's 7:45 AM Central Time
+      - name: Check Central time is in morning window
         id: tz-check
         run: |
-          CENTRAL_HOUR=$(TZ="America/Chicago" date +%H)
+          CENTRAL_HOUR=$((10#$(TZ="America/Chicago" date +%H)))
           echo "Central time hour: $CENTRAL_HOUR"
-          if [ "$CENTRAL_HOUR" != "07" ]; then
-            echo "Not 7 AM Central — skipping (DST mismatch). Hour is $CENTRAL_HOUR."
+          if [ "$CENTRAL_HOUR" -lt 6 ] || [ "$CENTRAL_HOUR" -gt 10 ]; then
+            echo "Outside 6–10 CT window — skipping. Hour is $CENTRAL_HOUR."
             echo "skip=true" >> "$GITHUB_OUTPUT"
           else
             echo "skip=false" >> "$GITHUB_OUTPUT"

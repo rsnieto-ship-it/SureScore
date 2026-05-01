@@ -2,11 +2,10 @@ name: "Digest — Tuesday Auto-Select Fallback"
 
 on:
   schedule:
-    # Fire at both possible UTC times for 6:00 AM Central:
-    # 11:00 UTC = 6:00 AM CDT (March–November)
-    # 12:00 UTC = 6:00 AM CST (November–March)
+    # 11:00 UTC Tuesday = 6:00 AM CDT / 5:00 AM CST. GH Actions cron can
+    # drift up to ~3 hours late, so the window gate below accepts hours
+    # 5–9 CT. Auto-select is a no-op if Roy has already picked.
     - cron: "0 11 * * 2"
-    - cron: "0 12 * * 2"
   workflow_dispatch: # Allow manual trigger from GitHub UI
 
 jobs:
@@ -17,14 +16,14 @@ jobs:
         working-directory: digest-script
 
     steps:
-      - name: Check if it's 6 AM Central Time
+      - name: Check Central time is in early-morning window
         id: tz-check
         working-directory: .
         run: |
-          CENTRAL_HOUR=$(TZ="America/Chicago" date +%H)
+          CENTRAL_HOUR=$((10#$(TZ="America/Chicago" date +%H)))
           echo "Central time hour: $CENTRAL_HOUR"
-          if [ "$CENTRAL_HOUR" != "06" ]; then
-            echo "Not 6 AM Central — skipping (DST mismatch). Hour is $CENTRAL_HOUR."
+          if [ "$CENTRAL_HOUR" -lt 5 ] || [ "$CENTRAL_HOUR" -gt 9 ]; then
+            echo "Outside 5–9 CT window — skipping. Hour is $CENTRAL_HOUR."
             echo "skip=true" >> "$GITHUB_OUTPUT"
           else
             echo "skip=false" >> "$GITHUB_OUTPUT"

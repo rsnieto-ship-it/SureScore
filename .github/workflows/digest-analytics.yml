@@ -2,11 +2,9 @@ name: "Digest — Daily Analytics Report"
 
 on:
   schedule:
-    # Fire at both possible UTC times for 4:45 PM Central:
-    # 21:45 UTC = 4:45 PM CDT (March–November)
-    # 22:45 UTC = 4:45 PM CST (November–March)
+    # 21:45 UTC = 4:45 PM CDT / 3:45 PM CST. GH Actions cron can drift up
+    # to ~3 hours late, so the window gate below accepts hours 15–19 CT.
     - cron: "45 21 * * *"
-    - cron: "45 22 * * *"
   workflow_dispatch: # Allow manual trigger
 
 jobs:
@@ -17,14 +15,14 @@ jobs:
         working-directory: digest-script
 
     steps:
-      - name: Check if it's 4 PM Central Time
+      - name: Check Central time is in afternoon window
         id: tz-check
         working-directory: .
         run: |
-          CENTRAL_HOUR=$(TZ="America/Chicago" date +%H)
+          CENTRAL_HOUR=$((10#$(TZ="America/Chicago" date +%H)))
           echo "Central time hour: $CENTRAL_HOUR"
-          if [ "$CENTRAL_HOUR" != "16" ]; then
-            echo "Not 4 PM Central — skipping (DST mismatch). Hour is $CENTRAL_HOUR."
+          if [ "$CENTRAL_HOUR" -lt 15 ] || [ "$CENTRAL_HOUR" -gt 19 ]; then
+            echo "Outside 15–19 CT window — skipping. Hour is $CENTRAL_HOUR."
             echo "skip=true" >> "$GITHUB_OUTPUT"
           else
             echo "skip=false" >> "$GITHUB_OUTPUT"
