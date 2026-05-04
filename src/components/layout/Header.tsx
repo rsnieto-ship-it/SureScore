@@ -221,7 +221,7 @@ export function Header() {
 
             {/* Panel 2: Strategy of the Day */}
             <a
-              href="https://sotd.surescore.com"
+              href="https://prep.surescore.com"
               target="_blank"
               rel="noopener noreferrer"
               className="flex flex-col items-center justify-center p-10 md:p-12 bg-white hover:bg-[var(--secondary-50)] transition-all group text-center border-t md:border-t-0 md:border-l border-gray-200"
