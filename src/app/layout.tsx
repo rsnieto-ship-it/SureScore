@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import { Montserrat, Inter, Space_Grotesk } from "next/font/google";
 import "./globals.css";
 
@@ -55,6 +56,11 @@ export default function RootLayout({
         className={`${montserrat.variable} ${inter.variable} ${spaceGrotesk.variable} font-sans antialiased`}
       >
         {children}
+        <Script
+          src="https://static.cloudflareinsights.com/beacon.min.js"
+          strategy="afterInteractive"
+          data-cf-beacon='{"token": "5bc7bb1b80864bc886702ee93befecf6"}'
+        />
       </body>
     </html>
   );
