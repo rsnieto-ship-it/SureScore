@@ -214,12 +214,9 @@ export function Header() {
               <div className="w-20 h-20 bg-[var(--primary-100)] text-[var(--primary-500)] rounded-2xl flex items-center justify-center mb-6 group-hover:bg-[var(--primary-500)] group-hover:text-white transition-colors">
                 <ClipboardCheck className="w-10 h-10" />
               </div>
-              <h3 className="text-xl font-bold font-[family-name:var(--font-montserrat)] text-gray-900 group-hover:text-[var(--primary-600)] transition-colors mb-2">
-                Take a Diagnostic
+              <h3 className="text-xl font-bold font-[family-name:var(--font-montserrat)] text-gray-900 group-hover:text-[var(--primary-600)] transition-colors">
+                ECAR Unit Exam for United ISD
               </h3>
-              <p className="text-gray-500 text-sm">
-                SAT, ACT, and TSIA2 assessments
-              </p>
             </a>
 
             {/* Panel 2: Strategy of the Day */}
@@ -233,12 +230,9 @@ export function Header() {
               <div className="w-20 h-20 bg-[var(--secondary-100)] text-[var(--secondary-500)] rounded-2xl flex items-center justify-center mb-6 group-hover:bg-[var(--secondary-500)] group-hover:text-white transition-colors">
                 <Zap className="w-10 h-10" />
               </div>
-              <h3 className="text-xl font-bold font-[family-name:var(--font-montserrat)] text-gray-900 group-hover:text-[var(--secondary-600)] transition-colors mb-2">
-                Strategy of the Day
+              <h3 className="text-xl font-bold font-[family-name:var(--font-montserrat)] text-gray-900 group-hover:text-[var(--secondary-600)] transition-colors">
+                TSIA Prep
               </h3>
-              <p className="text-gray-500 text-sm">
-                Daily TSIA2 test prep for your classroom
-              </p>
             </a>
           </div>
         </div>
