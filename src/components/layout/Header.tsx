@@ -215,7 +215,7 @@ export function Header() {
                 <ClipboardCheck className="w-10 h-10" />
               </div>
               <h3 className="text-xl font-bold font-[family-name:var(--font-montserrat)] text-gray-900 group-hover:text-[var(--primary-600)] transition-colors">
-                ECAR Unit Exam for United ISD
+                ECAR EOY Exam for <span className="whitespace-nowrap">United ISD</span>
               </h3>
             </a>
 
