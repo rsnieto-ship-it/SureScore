@@ -2,10 +2,13 @@ name: "Digest — Monday Preview"
 
 on:
   schedule:
-    # 13:00 UTC Monday = 8:00 AM CDT / 7:00 AM CST. GH Actions cron can
-    # drift up to ~3 hours late, so the window gate below accepts hours
-    # 7–11 CT.
-    - cron: "0 13 * * 1"
+    # 20:00 UTC Monday = 3:00 PM CDT / 2:00 PM CST. Pushed back from 8am CT
+    # so afternoon-published Texas stories make the candidate batch
+    # (Texas Tribune's "historic enrollment drop" piece on 2026-05-11
+    # was published at 11:02 AM CT, 8 min after the old 10:54 fetch).
+    # GH Actions cron can drift up to ~3 hours late, so the window gate
+    # below accepts hours 14–18 CT.
+    - cron: "0 20 * * 1"
   workflow_dispatch: # Allow manual trigger from GitHub UI
 
 jobs:
@@ -22,8 +25,8 @@ jobs:
         run: |
           CENTRAL_HOUR=$((10#$(TZ="America/Chicago" date +%H)))
           echo "Central time hour: $CENTRAL_HOUR"
-          if [ "$CENTRAL_HOUR" -lt 7 ] || [ "$CENTRAL_HOUR" -gt 11 ]; then
-            echo "Outside 7–11 CT window — skipping. Hour is $CENTRAL_HOUR."
+          if [ "$CENTRAL_HOUR" -lt 14 ] || [ "$CENTRAL_HOUR" -gt 18 ]; then
+            echo "Outside 14–18 CT window — skipping. Hour is $CENTRAL_HOUR."
             echo "skip=true" >> "$GITHUB_OUTPUT"
           else
             echo "skip=false" >> "$GITHUB_OUTPUT"
