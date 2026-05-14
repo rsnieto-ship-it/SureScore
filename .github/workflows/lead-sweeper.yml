@@ -1,0 +1,39 @@
+name: "Lead Sweeper — Daily"
+
+on:
+  schedule:
+    # 14:00 UTC daily = 9:00 AM CDT / 8:00 AM CST. The sweeper finds
+    # FormSubmission rows where notified=false AND createdAt is at least
+    # 60 min old, and emails Roy a summary. Backup for src/lib/email.ts
+    # in case the inline notification path throws (e.g., Gmail App
+    # Password was silently revoked between 3/25 and 3/30/2026, losing
+    # 3 real district leads — La Joya, Spring Branch, La Villa).
+    - cron: "0 14 * * *"
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  sweep:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: digest-script
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run sweeper
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_SES_REGION: ${{ secrets.AWS_SES_REGION }}
+          NOTIFICATION_EMAIL: ${{ secrets.NOTIFICATION_EMAIL }}
+          ROY_EMAIL: ${{ secrets.ROY_EMAIL }}
+        run: python lead_sweeper.py
