@@ -3282,6 +3282,23 @@ def _run_send_all(conn, batch_limit=0, force=False):
             print(f"   Run --select to create a new digest first.")
             return
 
+    # SAFETY: refuse if the latest digest is not from the current ISO week.
+    # Why: on 2026-05-12 the send workflow fired before --select created
+    # the week's digest. _run_send_all picked up the previous week's digest
+    # (whose DigestSendLog already contained every subscriber) and silently
+    # sent to only the 1 new subscriber — appearing to "complete" with 0 work.
+    if digest_date and isinstance(digest_date, datetime):
+        today = datetime.now()
+        today_year, today_week, _ = today.isocalendar()
+        digest_year, digest_week, _ = digest_date.isocalendar()
+        if (today_year, today_week) != (digest_year, digest_week):
+            print(f"❌ BLOCKED: Latest digest is from ISO week {digest_year}-W{digest_week:02d}, "
+                  f"but today is in {today_year}-W{today_week:02d}.")
+            print(f"   Digest sentAt: {digest_date.strftime('%Y-%m-%d %H:%M %Z')}")
+            print(f"   Likely cause: the send workflow ran before --select / --auto-select")
+            print(f"   created this week's digest. Create a fresh digest, then retry --send-all.")
+            return
+
     print(f"📰 SEND ALL — Digest #{digest_id}\n")
 
     stories = load_digest_from_db(conn, digest_id)

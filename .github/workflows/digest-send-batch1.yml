@@ -8,6 +8,12 @@ on:
     # script enforces a Tuesday-only guard for --send-all.
     - cron: "45 12 * * 2"
   workflow_dispatch: # Allow manual trigger from GitHub UI
+    inputs:
+      force:
+        description: "Override day-of-week guard (Tue/Wed only). Required for manual sends outside the normal window."
+        required: false
+        type: boolean
+        default: false
 
 jobs:
   send-all:
@@ -54,4 +60,9 @@ jobs:
           ROY_EMAIL: ${{ secrets.ROY_EMAIL }}
           UNSUBSCRIBE_SECRET: ${{ secrets.UNSUBSCRIBE_SECRET }}
           SITE_URL: ${{ secrets.SITE_URL }}
-        run: python surescore_digest.py --send-all
+        run: |
+          if [ "${{ github.event.inputs.force }}" = "true" ]; then
+            python surescore_digest.py --send-all --force
+          else
+            python surescore_digest.py --send-all
+          fi
