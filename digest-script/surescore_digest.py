@@ -1270,20 +1270,38 @@ def score_candidate_relevance(stories, threshold=None):
 
     kept = []
     dropped = 0
+    tx_rescues = 0
     for i, s in enumerate(stories, 1):
         if i not in score_by_n:
             kept.append(s)
             continue
         score, reason = score_by_n[i]
+        # Accept either the in-memory "texas" key (from fetch_news) or the
+        # "is_texas" key (from DB-loaded candidates) so this filter can run
+        # against either source.
+        is_texas = bool(s.get("texas") or s.get("is_texas"))
         if score >= threshold:
             s["relevance_score"] = score
             s["relevance_reason"] = reason
             kept.append(s)
+        elif is_texas:
+            # Texas escape hatch: the rubric reliably under-weights local
+            # TIA awards, district scholarship events, and TX-specific cost
+            # stories that drive the most engagement from our audience
+            # (Texas counselors and district admins). Keep all TX stories
+            # regardless of score; rely on Roy's manual picks to cut any
+            # that are truly off-topic.
+            s["relevance_score"] = score
+            s["relevance_reason"] = reason
+            kept.append(s)
+            tx_rescues += 1
+            print(f"   🤠 TX rescue (score={score}): {s['title'][:60]}... — {reason}")
         else:
             dropped += 1
             print(f"   ✂️  Dropped (score={score}): {s['title'][:60]}... — {reason}")
 
-    print(f"✅ Relevance filter kept {len(kept)}/{len(stories)} ({dropped} dropped)\n")
+    print(f"✅ Relevance filter kept {len(kept)}/{len(stories)} "
+          f"({dropped} dropped, {tx_rescues} TX rescues)\n")
     return kept
 
 
