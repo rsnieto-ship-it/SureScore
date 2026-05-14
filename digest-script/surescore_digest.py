@@ -3473,8 +3473,6 @@ def _run_send_all(conn, batch_limit=0, force=False):
     - Refuses to send a digest older than 7 days (prevents stale resends).
     - Prints story titles before sending so operators can verify content.
     """
-    import subprocess, json
-
     # 1. Find latest digest with age check
     cur = conn.cursor()
     cur.execute('SELECT id, "sentAt" FROM "DigestHistory" ORDER BY "sentAt" DESC LIMIT 1')
@@ -3540,22 +3538,23 @@ def _run_send_all(conn, batch_limit=0, force=False):
     if already_sent:
         print(f"   ⏭️  {len(already_sent)} already sent — will skip these")
 
-    # 4. Export subscribed contacts from PostgreSQL
+    # 4. Load subscribed contacts directly from Postgres.
+    # Previously this shelled out to `npx tsx scripts/fetch_subscribers.ts`
+    # using a Mac-only Homebrew path and a relative dir that didn't exist
+    # on GitHub Actions runners — the workflow has been failing here
+    # silently for weeks (5/05 partial-send, 5/12 + 5/14 full failures).
+    # psycopg2 is already in scope; no subprocess needed.
     print("   📋 Loading contacts from PostgreSQL...")
-    surescore_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "..", "surescore-new")
-    npx_path = "/opt/homebrew/bin/npx"
-    script_path = os.path.join(surescore_dir, "scripts", "fetch_subscribers.ts")
-    result = subprocess.run(
-        [npx_path, "tsx", script_path],
-        capture_output=True, text=True, timeout=30,
-        cwd=surescore_dir
-    )
-
-    if result.returncode != 0:
-        print(f"❌ Failed to load contacts: {result.stderr[:200]}")
+    try:
+        contact_cur = conn.cursor()
+        contact_cur.execute(
+            'SELECT email FROM "Contact" WHERE status = %s ORDER BY email ASC',
+            ("SUBSCRIBED",),
+        )
+        all_contacts = [r[0].strip() for r in contact_cur.fetchall() if r[0] and "@" in r[0]]
+    except Exception as e:
+        print(f"❌ Failed to load contacts: {e}")
         return
-
-    all_contacts = [e.strip() for e in result.stdout.strip().split("\n") if e.strip() and "@" in e]
     unsent = [e for e in all_contacts if e not in already_sent]
 
     if not unsent:
