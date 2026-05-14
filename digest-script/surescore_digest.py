@@ -2873,6 +2873,117 @@ def send_email(stories, recipients=None, digest_id=None, conn=None, pg_digest_id
 
     print(f"\n🎉 Digest complete! ✅ {sent_count} sent, ❌ {fail_count} failed")
 
+    return {"sent_count": sent_count, "fail_count": fail_count, "subject": subject}
+
+
+def _send_send_all_completion_email(stories, digest_id, summary, total_subscribers,
+                                    already_sent, attempted, duration_seconds,
+                                    subject_line, force):
+    """Email Roy + DIGEST_RECIPIENTS a summary after --send-all finishes.
+
+    Failures here are logged but NOT raised — a notification problem must not
+    cause the send job to appear failed in CI when the actual mass send
+    succeeded. Recipient emails are never included in the body to avoid
+    leaking the subscriber list into operator inboxes.
+    """
+    print("📧 Sending send-complete notification...")
+
+    if not AWS_ACCESS_KEY_ID or not AWS_SECRET_ACCESS_KEY:
+        print("   ⚠️  AWS SES credentials not set. Skipping completion notification.")
+        return
+
+    notify_recipients = [
+        r.strip() for r in os.environ.get("DIGEST_RECIPIENTS", ROY_EMAIL).split(",")
+        if r.strip()
+    ]
+    if not notify_recipients:
+        print("   ⚠️  No notification recipients configured. Skipping.")
+        return
+
+    sent_count = summary.get("sent_count", 0)
+    fail_count = summary.get("fail_count", 0)
+    status_icon = "✅" if fail_count == 0 else "⚠️"
+    force_tag = " (forced)" if force else ""
+    duration_str = f"{int(duration_seconds // 60)}m {int(duration_seconds % 60)}s"
+
+    subject = (
+        f"{status_icon} Digest sent{force_tag}: {sent_count} delivered"
+        + (f", {fail_count} failed" if fail_count else "")
+    )
+
+    story_rows_html = "".join(
+        f"<li style=\"margin-bottom:6px;\">{s.get('title', '(untitled)')}</li>"
+        for s in (stories or [])
+    )
+
+    html = f"""
+    <html><body style="font-family: Arial, sans-serif; max-width: 640px; margin: 0 auto; color: #222;">
+    <h2 style="margin-bottom: 4px;">{status_icon} Digest send complete{force_tag}</h2>
+    <p style="color:#666; margin-top:0;">Digest <code>{digest_id}</code></p>
+
+    <table style="border-collapse: collapse; margin: 16px 0;">
+      <tr><td style="padding:4px 12px 4px 0; color:#666;">Subject line</td><td style="padding:4px 0;">{subject_line}</td></tr>
+      <tr><td style="padding:4px 12px 4px 0; color:#666;">Delivered</td><td style="padding:4px 0;"><strong>{sent_count}</strong></td></tr>
+      <tr><td style="padding:4px 12px 4px 0; color:#666;">Failed</td><td style="padding:4px 0;">{fail_count}</td></tr>
+      <tr><td style="padding:4px 12px 4px 0; color:#666;">Attempted this run</td><td style="padding:4px 0;">{attempted}</td></tr>
+      <tr><td style="padding:4px 12px 4px 0; color:#666;">Already-sent (skipped)</td><td style="padding:4px 0;">{already_sent}</td></tr>
+      <tr><td style="padding:4px 12px 4px 0; color:#666;">Total subscribers</td><td style="padding:4px 0;">{total_subscribers}</td></tr>
+      <tr><td style="padding:4px 12px 4px 0; color:#666;">Duration</td><td style="padding:4px 0;">{duration_str}</td></tr>
+    </table>
+
+    <h3 style="margin-bottom: 4px;">Stories</h3>
+    <ol style="margin-top: 4px; padding-left: 20px;">{story_rows_html}</ol>
+
+    <p style="color:#888; font-size:12px; margin-top:24px;">
+      Open + click analytics will be in the 4:45pm CT analytics report.
+    </p>
+    </body></html>"""
+
+    text_lines = [
+        f"DIGEST SEND COMPLETE{force_tag.upper()}",
+        "=" * 50,
+        f"Digest: {digest_id}",
+        f"Subject: {subject_line}",
+        "",
+        f"Delivered:           {sent_count}",
+        f"Failed:              {fail_count}",
+        f"Attempted this run:  {attempted}",
+        f"Already-sent:        {already_sent}",
+        f"Total subscribers:   {total_subscribers}",
+        f"Duration:            {duration_str}",
+        "",
+        "Stories:",
+    ]
+    for i, s in enumerate(stories or [], start=1):
+        text_lines.append(f"  {i}. {s.get('title', '(untitled)')}")
+    text_lines.append("")
+    text_lines.append("Analytics report follows at 4:45pm CT.")
+    text_content = "\n".join(text_lines)
+
+    try:
+        ses_client = boto3.client(
+            "ses",
+            region_name=AWS_SES_REGION,
+            aws_access_key_id=AWS_ACCESS_KEY_ID,
+            aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
+        )
+        for recipient in notify_recipients:
+            msg = MIMEMultipart("alternative")
+            msg["Subject"] = subject
+            msg["From"] = SES_SENDER
+            msg["To"] = recipient
+            msg.attach(MIMEText(text_content, "plain"))
+            msg.attach(MIMEText(html, "html"))
+            ses_client.send_raw_email(
+                Source=SES_SENDER,
+                Destinations=[recipient],
+                RawMessage={"Data": msg.as_string()},
+            )
+            print(f"   ✅ Completion notification sent to {recipient}")
+    except Exception as e:
+        # Non-fatal: the digest already went out. Log and move on.
+        print(f"   ⚠️  Completion notification failed (digest was still sent): {e}")
+
 
 def send_preview_email(candidates, monday_date_str):
     """Send the Friday preview email to Roy."""
@@ -3369,8 +3480,10 @@ def _run_send_all(conn, batch_limit=0, force=False):
         else:
             pg_update_digest_status(pg_digest_id, "SENDING_BATCH_2")
 
-    send_email(stories, recipients=unsent, digest_id=str(digest_id), conn=conn,
-               pg_digest_id=pg_digest_id, batch_num=batch_num, force=force)
+    send_started_at = time.time()
+    summary = send_email(stories, recipients=unsent, digest_id=str(digest_id), conn=conn,
+                         pg_digest_id=pg_digest_id, batch_num=batch_num, force=force)
+    duration_seconds = time.time() - send_started_at
 
     # Update PG status after send
     if pg_digest_id:
@@ -3378,6 +3491,23 @@ def _run_send_all(conn, batch_limit=0, force=False):
             pg_update_digest_status(pg_digest_id, "SENT_BATCH_1")
         else:
             pg_update_digest_status(pg_digest_id, "SENT_COMPLETE")
+
+    # Email Roy + DIGEST_RECIPIENTS a summary so they know the send finished.
+    # Skip if send_email returned None (safeguards blocked it or AWS creds
+    # missing) — those paths already print to stdout and there's nothing to
+    # report.
+    if summary is not None:
+        _send_send_all_completion_email(
+            stories=stories,
+            digest_id=str(digest_id),
+            summary=summary,
+            total_subscribers=len(all_contacts),
+            already_sent=len(already_sent),
+            attempted=len(unsent),
+            duration_seconds=duration_seconds,
+            subject_line=summary.get("subject", "(unknown)"),
+            force=force,
+        )
 
 
 def run_generate(conn, pg_digest_id):
