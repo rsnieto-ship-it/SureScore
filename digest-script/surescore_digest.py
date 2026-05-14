@@ -698,17 +698,6 @@ RSS_FEEDS = [
         "category": "TX SUPERINTENDENT",
         "texas": True,
     },
-    # --- Highly Selective Boarding Schools ---
-    {
-        "name": "Google News — Elite Boarding School Admissions",
-        "url": "https://news.google.com/rss/search?q=(%22Phillips+Exeter%22+OR+%22Phillips+Andover%22+OR+%22Deerfield+Academy%22+OR+%22Choate+Rosemary%22+OR+%22St.+Paul%27s+School%22+OR+%22Lawrenceville%22+OR+%22Hotchkiss%22+OR+%22Groton%22)+(admissions+OR+acceptance+OR+enrollment+OR+boarding+school)&hl=en-US&gl=US&ceid=US:en",
-        "category": "BOARDING SCHOOLS",
-    },
-    {
-        "name": "Google News — Boarding School Trends",
-        "url": "https://news.google.com/rss/search?q=(%22boarding+school+admissions%22+OR+%22prep+school+admissions%22+OR+%22boarding+school+application%22+OR+%22SSAT%22+OR+%22independent+school+admissions%22)&hl=en-US&gl=US&ceid=US:en",
-        "category": "BOARDING SCHOOLS",
-    },
 ]
 
 # Keyword filters — stories must contain at least one of these
@@ -785,12 +774,6 @@ KEYWORDS = [
     # Highly selective (non-Ivy)
     "Stanford", "MIT", "Duke", "Caltech", "Johns Hopkins",
     "Northwestern", "Georgetown", "Vanderbilt",
-    # Boarding schools / prep schools
-    "Phillips Exeter", "Phillips Andover", "Deerfield Academy",
-    "Choate Rosemary", "Choate", "St. Paul's School",
-    "Lawrenceville", "Hotchkiss", "Groton",
-    "boarding school admissions", "prep school admissions",
-    "SSAT", "independent school",
 ]
 
 # Stories containing ANY of these words get blocked — no exceptions
@@ -839,6 +822,11 @@ BLOCKED_TOPICS = [
     "ice operation", "deportation", "march to capitol",
     "school voucher", "voucher debate", "voucher program",
     "special education order", "special ed order",
+    # District finance & capital projects (off-topic for college prep)
+    "school bond", "bond election", "bond referendum",
+    "school construction", "facilities upgrade", "facility upgrade",
+    # Elite K-12 admissions (off-topic for Texas counselors)
+    "private school admission", "private school admissions",
 ]
 
 # ============================================================
@@ -1176,7 +1164,6 @@ def fetch_news():
         "TX PRIVATE UNIV", "ADMISSIONS", "TESTING", "ADMISSIONS POLICY",
         "FINANCIAL AID", "SCHOLARSHIPS", "ENROLLMENT", "HIGHER ED",
         "EDUCATION POLICY", "IVY LEAGUE", "SELECTIVE ADMISSIONS",
-        "BOARDING SCHOOLS",
     }
     tier1 = [s for s in unique_stories if s.get("category") in TIER_1_CATEGORIES]
     tier2 = [s for s in unique_stories if s.get("category") not in TIER_1_CATEGORIES]
@@ -1212,6 +1199,92 @@ def filter_already_sent(conn, stories):
             continue
         filtered.append(story)
     return filtered
+
+
+RELEVANCE_RUBRIC = """You are a relevance gatekeeper for SureScore's weekly newsletter. SureScore advises Texas school counselors and district administrators on college readiness — TSIA/TSI2, SAT/ACT, college admissions, financial aid (FAFSA, scholarships), CCMR, TIA (Teacher Incentive Allotment), Texas higher ed enrollment, dual credit/dual enrollment, and AP.
+
+Score each candidate 1-5 on usefulness to a Texas school counselor or district administrator:
+5 = directly actionable for Texas educators (TSIA changes, Texas admissions news, TIA updates, FAFSA changes affecting Texas families, Texas scholarship programs, CCMR/accountability shifts)
+4 = relevant trend that informs strategy (national admissions shift that changes how Texas counselors advise students, testing policy reversals at major universities, AP/dual-enrollment trend pieces)
+3 = tangentially useful (general college admissions story with a takeaway a counselor could use)
+2 = barely related (Ivy League admissions arms race not affecting most Texas students, generic K-12 trends with no clear college-prep takeaway, elite private/boarding school news)
+1 = off-topic (school operations, scandals, sports, politics, district finance, anything not about college readiness or Texas K-12 college prep)
+
+Be strict. When in doubt between two scores, pick the lower one. The newsletter goes to busy professionals — irrelevance erodes trust.
+
+Return STRICT JSON only — a single array, no prose, no markdown fences:
+[{"n": 1, "score": 4, "reason": "short reason"}, {"n": 2, "score": 2, "reason": "short reason"}, ...]
+"""
+
+
+def score_candidate_relevance(stories, threshold=None):
+    """Use Claude Haiku to score each candidate's relevance to Texas counselors.
+
+    Returns the filtered list (stories with score >= threshold). Drops are logged.
+    On any API/parsing failure, returns the input list unchanged (fail-open).
+    """
+    if not stories:
+        return stories
+
+    if threshold is None:
+        try:
+            threshold = int(os.environ.get("RELEVANCE_THRESHOLD", "3"))
+        except ValueError:
+            threshold = 3
+
+    print(f"\n🎯 Scoring {len(stories)} candidates for Texas-counselor relevance (threshold={threshold})...")
+
+    lines = []
+    for i, s in enumerate(stories, 1):
+        summary = (s.get("summary") or "")[:300]
+        lines.append(f"{i}. [{s.get('source','?')}] {s['title']} — {summary}")
+    candidate_block = "\n".join(lines)
+
+    try:
+        client = Anthropic(api_key=ANTHROPIC_API_KEY)
+        resp = client.messages.create(
+            model="claude-haiku-4-5-20251001",
+            max_tokens=2000,
+            system=RELEVANCE_RUBRIC,
+            messages=[{
+                "role": "user",
+                "content": f"CANDIDATES:\n{candidate_block}\n\nReturn the JSON array now.",
+            }],
+        )
+        raw = resp.content[0].text.strip()
+        # Strip accidental code fences
+        if raw.startswith("```"):
+            raw = re.sub(r"^```(?:json)?\s*", "", raw)
+            raw = re.sub(r"\s*```$", "", raw)
+        scores = json.loads(raw)
+    except Exception as e:
+        print(f"   ⚠️  Relevance filter failed ({e}); keeping all candidates.")
+        return stories
+
+    score_by_n = {}
+    for item in scores:
+        try:
+            score_by_n[int(item["n"])] = (int(item["score"]), str(item.get("reason", "")))
+        except (KeyError, ValueError, TypeError):
+            continue
+
+    kept = []
+    dropped = 0
+    for i, s in enumerate(stories, 1):
+        if i not in score_by_n:
+            kept.append(s)
+            continue
+        score, reason = score_by_n[i]
+        if score >= threshold:
+            s["relevance_score"] = score
+            s["relevance_reason"] = reason
+            kept.append(s)
+        else:
+            dropped += 1
+            print(f"   ✂️  Dropped (score={score}): {s['title'][:60]}... — {reason}")
+
+    print(f"✅ Relevance filter kept {len(kept)}/{len(stories)} ({dropped} dropped)\n")
+    return kept
 
 
 # ============================================================
@@ -3172,7 +3245,7 @@ def _get_next_monday():
     return monday.strftime("Mon %b %d")
 
 
-def run_preview(conn):
+def run_preview(conn, skip_relevance_filter=False):
     """Friday mode: fetch 20 candidates, save to DB, email Roy the numbered list."""
     print("\n📋 PREVIEW MODE — Fetching candidates for curation\n")
 
@@ -3186,6 +3259,17 @@ def run_preview(conn):
 
     if not stories:
         print("⚠️  All stories were already sent recently.\n")
+        return
+
+    # LLM relevance filter — drops candidates that pass the keyword gate
+    # but aren't useful for Texas counselors/admins.
+    if not skip_relevance_filter:
+        stories = score_candidate_relevance(stories)
+    else:
+        print("⏭️  Skipping relevance filter (--no-relevance-filter)\n")
+
+    if not stories:
+        print("⚠️  No stories survived the relevance filter.\n")
         return
 
     # Save to candidate_stories table
@@ -3242,7 +3326,7 @@ def run_select(conn, selection_str, auto_send=False):
 
     # Parse selection numbers
     positions = [int(n.strip()) for n in selection_str.split(",") if n.strip().isdigit()]
-    positions = [p for p in positions if 1 <= p <= 20][:6]
+    positions = [p for p in positions if 1 <= p <= MAX_STORIES][:6]
 
     if not positions:
         print("❌ No valid positions provided. Use --select 1,3,7,12,15")
@@ -4121,6 +4205,8 @@ def main():
                         help="Override day-of-week safeguard for --send-all")
     parser.add_argument("--recipients", type=str, metavar="FILE",
                         help="Send to emails listed in FILE (one per line), use with --send-digest")
+    parser.add_argument("--no-relevance-filter", action="store_true",
+                        help="Skip the LLM relevance pre-filter in --preview (debugging)")
     args = parser.parse_args()
 
     print("\n" + "=" * 50)
@@ -4148,7 +4234,7 @@ def main():
 
     # Route to the appropriate mode
     if args.preview:
-        run_preview(conn)
+        run_preview(conn, skip_relevance_filter=args.no_relevance_filter)
     elif args.check_reply:
         run_check_reply(conn)
     elif args.select:
