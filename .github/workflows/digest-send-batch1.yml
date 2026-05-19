@@ -2,11 +2,18 @@ name: "Digest — Tuesday Send All"
 
 on:
   schedule:
-    # 12:45 UTC Tuesday = 7:45 AM CDT / 6:45 AM CST. GH Actions cron can
-    # drift up to ~3 hours late, so the window gate below accepts hours
-    # 6–10 CT. DigestSendLog provides per-recipient idempotency, and the
-    # script enforces a Tuesday-only guard for --send-all.
-    - cron: "45 12 * * 2"
+    # GH Actions cron has consistently drifted 90–200+ minutes late on this
+    # repo (observed across 7+ weekly runs). Earlier cron + Wednesday fallback
+    # ensures the send still lands inside the window gate even with worst-case
+    # drift.
+    #
+    # 10:00 UTC Tuesday = 5:00 AM CDT / 4:00 AM CST.
+    #   With observed drift: expected actual fire 6:30–8:00 AM CT (inside gate).
+    # 12:00 UTC Wednesday = 7:00 AM CDT / 6:00 AM CST.
+    #   Backup in case Tuesday is missed. Wed is in SEND_ALLOWED_DAYS so the
+    #   script's day guard passes; DigestSendLog idempotency prevents double-send.
+    - cron: "0 10 * * 2"
+    - cron: "0 12 * * 3"
   workflow_dispatch: # Allow manual trigger from GitHub UI
     inputs:
       force:
@@ -28,8 +35,8 @@ jobs:
         run: |
           CENTRAL_HOUR=$((10#$(TZ="America/Chicago" date +%H)))
           echo "Central time hour: $CENTRAL_HOUR"
-          if [ "$CENTRAL_HOUR" -lt 6 ] || [ "$CENTRAL_HOUR" -gt 10 ]; then
-            echo "Outside 6–10 CT window — skipping. Hour is $CENTRAL_HOUR."
+          if [ "$CENTRAL_HOUR" -lt 6 ] || [ "$CENTRAL_HOUR" -gt 11 ]; then
+            echo "Outside 6–11 CT window — skipping. Hour is $CENTRAL_HOUR."
             echo "skip=true" >> "$GITHUB_OUTPUT"
           else
             echo "skip=false" >> "$GITHUB_OUTPUT"
