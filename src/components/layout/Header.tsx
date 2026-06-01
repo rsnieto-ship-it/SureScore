@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Menu, X, ChevronDown, LogIn, ClipboardCheck, Zap } from "lucide-react";
+import { Menu, X, ChevronDown, LogIn, ClipboardCheck, Zap, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui";
 import { Container } from "@/components/ui";
 import { cn } from "@/lib/utils";
@@ -198,42 +198,68 @@ export function Header() {
             <X className="w-5 h-5" />
           </button>
 
-          {/* Two Panels */}
+          {/* Modal card */}
           <div
-            className="relative grid grid-cols-1 md:grid-cols-2 max-w-3xl w-full mx-4 rounded-2xl overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-200"
+            className="relative max-w-2xl w-full mx-4 rounded-3xl overflow-hidden bg-white shadow-2xl ring-1 ring-black/5 animate-in fade-in zoom-in-95 duration-200"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Panel 1: Take a Diagnostic */}
-            <a
-              href="https://surescore.edis.io/Account/testlogon"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex flex-col items-center justify-center p-10 md:p-12 bg-white hover:bg-[var(--primary-50)] transition-all group text-center"
-              onClick={() => setLoginOpen(false)}
-            >
-              <div className="w-20 h-20 bg-[var(--primary-100)] text-[var(--primary-500)] rounded-2xl flex items-center justify-center mb-6 group-hover:bg-[var(--primary-500)] group-hover:text-white transition-colors">
-                <ClipboardCheck className="w-10 h-10" />
-              </div>
-              <h3 className="text-xl font-bold font-[family-name:var(--font-montserrat)] text-gray-900 group-hover:text-[var(--primary-600)] transition-colors">
-                ECAR EOY Exam for <span className="whitespace-nowrap">United ISD</span>
-              </h3>
-            </a>
+            {/* Header */}
+            <div className="px-8 pt-10 pb-6 text-center">
+              <h2 className="text-2xl font-bold font-[family-name:var(--font-montserrat)] text-gray-900">
+                Welcome back
+              </h2>
+              <p className="mt-2 text-sm text-gray-500">
+                Choose where you&apos;d like to log in.
+              </p>
+            </div>
 
-            {/* Panel 2: Strategy of the Day */}
-            <a
-              href="https://prep.surescore.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex flex-col items-center justify-center p-10 md:p-12 bg-white hover:bg-[var(--secondary-50)] transition-all group text-center border-t md:border-t-0 md:border-l border-gray-200"
-              onClick={() => setLoginOpen(false)}
-            >
-              <div className="w-20 h-20 bg-[var(--secondary-100)] text-[var(--secondary-500)] rounded-2xl flex items-center justify-center mb-6 group-hover:bg-[var(--secondary-500)] group-hover:text-white transition-colors">
-                <Zap className="w-10 h-10" />
-              </div>
-              <h3 className="text-xl font-bold font-[family-name:var(--font-montserrat)] text-gray-900 group-hover:text-[var(--secondary-600)] transition-colors">
-                TSIA Prep
-              </h3>
-            </a>
+            {/* Two Options */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 px-8 pb-10">
+              {/* Option 1: TIA */}
+              <a
+                href="https://tia.surescore.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group relative flex flex-col items-center text-center rounded-2xl border border-gray-200 p-8 transition-all duration-200 hover:border-[var(--primary-300)] hover:shadow-lg hover:-translate-y-0.5"
+                onClick={() => setLoginOpen(false)}
+              >
+                <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-5 bg-gradient-to-br from-[var(--primary-100)] to-[var(--primary-200)] text-[var(--primary-600)] transition-all duration-200 group-hover:from-[var(--primary-500)] group-hover:to-[var(--primary-600)] group-hover:text-white group-hover:shadow-md">
+                  <ClipboardCheck className="w-8 h-8" />
+                </div>
+                <h3 className="text-lg font-bold font-[family-name:var(--font-montserrat)] text-gray-900">
+                  TIA Portal
+                </h3>
+                <p className="mt-1.5 text-sm text-gray-500">
+                  <span className="block whitespace-nowrap">Teacher Incentive Allotment</span>
+                  <span className="block">data platform</span>
+                </p>
+                <span className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-[var(--primary-600)] opacity-0 -translate-x-1 transition-all duration-200 group-hover:opacity-100 group-hover:translate-x-0">
+                  Continue <ArrowRight className="w-4 h-4" />
+                </span>
+              </a>
+
+              {/* Option 2: Test Prep */}
+              <a
+                href="https://prep.surescore.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group relative flex flex-col items-center text-center rounded-2xl border border-gray-200 p-8 transition-all duration-200 hover:border-[var(--secondary-300)] hover:shadow-lg hover:-translate-y-0.5"
+                onClick={() => setLoginOpen(false)}
+              >
+                <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-5 bg-gradient-to-br from-[var(--secondary-100)] to-[var(--secondary-200)] text-[var(--secondary-600)] transition-all duration-200 group-hover:from-[var(--secondary-500)] group-hover:to-[var(--secondary-600)] group-hover:text-white group-hover:shadow-md">
+                  <Zap className="w-8 h-8" />
+                </div>
+                <h3 className="text-lg font-bold font-[family-name:var(--font-montserrat)] text-gray-900">
+                  Test Prep
+                </h3>
+                <p className="mt-1.5 text-sm text-gray-500">
+                  TSIA, SAT, ACT, and PSAT
+                </p>
+                <span className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-[var(--secondary-600)] opacity-0 -translate-x-1 transition-all duration-200 group-hover:opacity-100 group-hover:translate-x-0">
+                  Continue <ArrowRight className="w-4 h-4" />
+                </span>
+              </a>
+            </div>
           </div>
         </div>
       )}
