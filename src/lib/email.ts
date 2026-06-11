@@ -11,11 +11,12 @@ import { sendEmail } from "@/lib/ses";
  * of failure too, but switching to SES removes the failure mode.
  */
 export async function sendNotification(subject: string, html: string) {
-  const to = process.env.NOTIFICATION_EMAIL;
-  if (!to) {
-    console.warn("NOTIFICATION_EMAIL not set — skipping email notification");
-    return;
-  }
+  // Recipient is code-controlled and defaults to Roy. Production's
+  // NOTIFICATION_EMAIL env var was stuck on admin@surescore.com — an
+  // unwatched mailbox on a Vercel team we can't access — so real leads
+  // (Huntsville/Winnsboro/Vernon ISD, 2026-06-11) were silently lost.
+  // Set LEAD_NOTIFICATION_EMAIL to override; otherwise everything goes to Roy.
+  const to = process.env.LEAD_NOTIFICATION_EMAIL || "roy@surescore.com";
 
   const result = await sendEmail({
     to,
