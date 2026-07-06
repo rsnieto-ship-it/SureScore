@@ -2,13 +2,16 @@ name: "Digest — Monday Preview"
 
 on:
   schedule:
-    # 20:00 UTC Monday = 3:00 PM CDT / 2:00 PM CST. Pushed back from 8am CT
-    # so afternoon-published Texas stories make the candidate batch
-    # (Texas Tribune's "historic enrollment drop" piece on 2026-05-11
-    # was published at 11:02 AM CT, 8 min after the old 10:54 fetch).
-    # GH Actions cron can drift up to ~3 hours late, so the window gate
-    # below accepts hours 14–18 CT.
-    - cron: "0 20 * * 1"
+    # 08:00 UTC Monday = 3:00 AM CDT / 2:00 AM CST. Scheduled well before the
+    # 7am CT target because GH Actions cron on this repo drifts 90-200+ min
+    # late; even with worst-case drift the preview lands before Roy's
+    # Monday-morning meeting. Tradeoff (accepted 2026-07-06): stories
+    # published later Monday miss the candidate batch (e.g. Texas Tribune's
+    # "historic enrollment drop" piece, 2026-05-11, published 11:02 AM CT).
+    # Late-breaking articles can be injected manually with
+    # `surescore_digest.py --add URL` before selection.
+    # The window gate below accepts hours 2-9 CT.
+    - cron: "0 8 * * 1"
   workflow_dispatch: # Allow manual trigger from GitHub UI
 
 jobs:
@@ -25,8 +28,8 @@ jobs:
         run: |
           CENTRAL_HOUR=$((10#$(TZ="America/Chicago" date +%H)))
           echo "Central time hour: $CENTRAL_HOUR"
-          if [ "$CENTRAL_HOUR" -lt 14 ] || [ "$CENTRAL_HOUR" -gt 18 ]; then
-            echo "Outside 14–18 CT window — skipping. Hour is $CENTRAL_HOUR."
+          if [ "$CENTRAL_HOUR" -lt 2 ] || [ "$CENTRAL_HOUR" -gt 9 ]; then
+            echo "Outside 2–9 CT window — skipping. Hour is $CENTRAL_HOUR."
             echo "skip=true" >> "$GITHUB_OUTPUT"
           else
             echo "skip=false" >> "$GITHUB_OUTPUT"
