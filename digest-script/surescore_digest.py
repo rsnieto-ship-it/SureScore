@@ -1519,8 +1519,9 @@ def generate_takes(stories):
         try:
             def _make_take_request(text=article_text, no_filler=no_filler_instruction):
                 return client.messages.create(
-                    model="claude-sonnet-4-20250514",
-                    max_tokens=700,
+                    model="claude-sonnet-5",
+                    thinking={"type": "disabled"},
+                    max_tokens=1000,
                     system=SYSTEM_PROMPT,
                     messages=[{
                         "role": "user",
@@ -1590,8 +1591,9 @@ def generate_takes(stories):
             if _is_refusal_take(all_generated_text):
                 print(f"      🔄 Filler detected — retrying with stronger prompt...")
                 retry_response = client.messages.create(
-                    model="claude-sonnet-4-20250514",
-                    max_tokens=700,
+                    model="claude-sonnet-5",
+                    thinking={"type": "disabled"},
+                    max_tokens=1000,
                     system=SYSTEM_PROMPT,
                     messages=[{
                         "role": "user",
@@ -1665,8 +1667,9 @@ def generate_subject_line(stories):
 
     try:
         response = client.messages.create(
-            model="claude-sonnet-4-20250514",
-            max_tokens=100,
+            model="claude-sonnet-5",
+            thinking={"type": "disabled"},
+            max_tokens=150,
             messages=[{
                 "role": "user",
                 "content": (
@@ -1751,8 +1754,9 @@ def generate_satire(conn):
         # Step 1: Generate a fresh headline
         def _make_headline_request():
             return client.messages.create(
-                model="claude-sonnet-4-20250514",
-                max_tokens=150,
+                model="claude-sonnet-5",
+                thinking={"type": "disabled"},
+                max_tokens=250,
                 messages=[{
                     "role": "user",
                     "content": SATIRE_HEADLINE_PROMPT.format(used_headlines=used_list),
@@ -1775,8 +1779,9 @@ def generate_satire(conn):
         # Step 2: Generate summary + take for the headline
         def _make_satire_request():
             return client.messages.create(
-                model="claude-sonnet-4-20250514",
-                max_tokens=400,
+                model="claude-sonnet-5",
+                thinking={"type": "disabled"},
+                max_tokens=600,
                 messages=[{
                     "role": "user",
                     "content": SATIRE_WRITE_PROMPT.format(headline=headline),
