@@ -8,9 +8,14 @@ on:
         required: true
         type: string
 
+concurrency:
+  group: digest-send
+  cancel-in-progress: false
+
 jobs:
   backfill:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     defaults:
       run:
         working-directory: digest-script
@@ -36,4 +41,6 @@ jobs:
           ROY_EMAIL: ${{ secrets.ROY_EMAIL }}
           UNSUBSCRIBE_SECRET: ${{ secrets.UNSUBSCRIBE_SECRET }}
           SITE_URL: ${{ secrets.SITE_URL }}
-        run: python surescore_digest.py --backfill-sends "${{ github.event.inputs.digest_id }}"
+          # Input passed via env var, not template interpolation
+          BACKFILL_ID: ${{ github.event.inputs.digest_id }}
+        run: python surescore_digest.py --backfill-sends "$BACKFILL_ID"

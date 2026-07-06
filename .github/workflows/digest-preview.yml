@@ -14,9 +14,14 @@ on:
     - cron: "0 8 * * 1"
   workflow_dispatch: # Allow manual trigger from GitHub UI
 
+concurrency:
+  group: digest-preview
+  cancel-in-progress: false
+
 jobs:
   preview:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     defaults:
       run:
         working-directory: digest-script

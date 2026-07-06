@@ -8,9 +8,15 @@ on:
         required: true
         type: string
 
+# Serialize with digest-auto-select.yml
+concurrency:
+  group: digest-select
+  cancel-in-progress: false
+
 jobs:
   select:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     defaults:
       run:
         working-directory: digest-script
@@ -36,4 +42,7 @@ jobs:
           ROY_EMAIL: ${{ secrets.ROY_EMAIL }}
           UNSUBSCRIBE_SECRET: ${{ secrets.UNSUBSCRIBE_SECRET }}
           SITE_URL: ${{ secrets.SITE_URL }}
-        run: python surescore_digest.py --select "${{ github.event.inputs.picks }}"
+          # Input passed via env var, not template interpolation, so shell
+          # metacharacters in the input can't execute as code
+          PICKS: ${{ github.event.inputs.picks }}
+        run: python surescore_digest.py --select "$PICKS"
