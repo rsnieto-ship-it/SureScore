@@ -2,15 +2,25 @@ name: "Digest — Tuesday Auto-Select Fallback"
 
 on:
   schedule:
-    # 11:00 UTC Tuesday = 6:00 AM CDT / 5:00 AM CST. GH Actions cron can
-    # drift up to ~3 hours late, so the window gate below accepts hours
-    # 5–9 CT. Auto-select is a no-op if Roy has already picked.
-    - cron: "0 11 * * 2"
+    # 09:00 UTC Tuesday = 4:00 AM CDT / 3:00 AM CST — deliberately scheduled
+    # 3 hours BEFORE the send cron (12:00 UTC) so the fallback digest exists
+    # by the time the send fires even with differential drift. (The old
+    # 11:00 UTC cron fired an hour AFTER the 10:00 send — in any week Roy
+    # hadn't picked, the send ran first, found nothing, and the week slipped
+    # to Wednesday.) Window gate accepts 3–9 CT. --send-all also self-heals
+    # by running auto-select inline if no current-week digest exists.
+    - cron: "0 9 * * 2"
   workflow_dispatch: # Allow manual trigger from GitHub UI
+
+# Serialize with digest-select.yml: never pick articles from two runs at once
+concurrency:
+  group: digest-select
+  cancel-in-progress: false
 
 jobs:
   auto-select:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     defaults:
       run:
         working-directory: digest-script
@@ -22,8 +32,8 @@ jobs:
         run: |
           CENTRAL_HOUR=$((10#$(TZ="America/Chicago" date +%H)))
           echo "Central time hour: $CENTRAL_HOUR"
-          if [ "$CENTRAL_HOUR" -lt 5 ] || [ "$CENTRAL_HOUR" -gt 9 ]; then
-            echo "Outside 5–9 CT window — skipping. Hour is $CENTRAL_HOUR."
+          if [ "$CENTRAL_HOUR" -lt 3 ] || [ "$CENTRAL_HOUR" -gt 9 ]; then
+            echo "Outside 3–9 CT window — skipping. Hour is $CENTRAL_HOUR."
             echo "skip=true" >> "$GITHUB_OUTPUT"
           else
             echo "skip=false" >> "$GITHUB_OUTPUT"

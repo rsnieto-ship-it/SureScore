@@ -8,14 +8,35 @@ on:
         required: true
         type: string
 
+# Shares the send group so a utility command can never overlap a mass send
+concurrency:
+  group: digest-send
+  cancel-in-progress: false
+
 jobs:
   util:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     defaults:
       run:
         working-directory: digest-script
 
     steps:
+      - name: Block send-capable commands
+        working-directory: .
+        env:
+          CMD: ${{ github.event.inputs.command }}
+        run: |
+          # This workflow is for read-only/diagnostic commands. Mass sends go
+          # through digest-send-batch1.yml only (CLAUDE.md: never create a
+          # side door that can send to all subscribers).
+          case "$CMD" in
+            *--send-all*|*--send-digest*|*--force*|*--auto*)
+              echo "🚫 BLOCKED: '$CMD' is send-capable. Use the dedicated send workflow."
+              exit 1
+              ;;
+          esac
+
       - uses: actions/checkout@v4
 
       - uses: actions/setup-python@v5
@@ -36,4 +57,8 @@ jobs:
           ROY_EMAIL: ${{ secrets.ROY_EMAIL }}
           UNSUBSCRIBE_SECRET: ${{ secrets.UNSUBSCRIBE_SECRET }}
           SITE_URL: ${{ secrets.SITE_URL }}
-        run: python surescore_digest.py ${{ github.event.inputs.command }}
+          # Input passed via env var, not template interpolation — the old
+          # direct ${{ }} splice let shell metacharacters in the input run
+          # arbitrary commands in a job holding every production secret.
+          CMD: ${{ github.event.inputs.command }}
+        run: python surescore_digest.py $CMD

@@ -2,14 +2,17 @@ name: "Digest — Daily Analytics Report"
 
 on:
   schedule:
-    # 21:45 UTC = 4:45 PM CDT / 3:45 PM CST. GH Actions cron can drift up
-    # to ~3 hours late, so the window gate below accepts hours 15–19 CT.
-    - cron: "45 21 * * *"
+    # 19:45 UTC = 2:45 PM CDT / 1:45 PM CST. The old 21:45 UTC cron left
+    # only a 194-minute drift budget in summer against observed drift of
+    # "200+ min, sometimes more" — late-drift days silently skipped the
+    # report. Window gate accepts 13–20 CT.
+    - cron: "45 19 * * *"
   workflow_dispatch: # Allow manual trigger
 
 jobs:
   analytics:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     defaults:
       run:
         working-directory: digest-script
@@ -21,8 +24,8 @@ jobs:
         run: |
           CENTRAL_HOUR=$((10#$(TZ="America/Chicago" date +%H)))
           echo "Central time hour: $CENTRAL_HOUR"
-          if [ "$CENTRAL_HOUR" -lt 15 ] || [ "$CENTRAL_HOUR" -gt 19 ]; then
-            echo "Outside 15–19 CT window — skipping. Hour is $CENTRAL_HOUR."
+          if [ "$CENTRAL_HOUR" -lt 13 ] || [ "$CENTRAL_HOUR" -gt 20 ]; then
+            echo "Outside 13–20 CT window — skipping. Hour is $CENTRAL_HOUR."
             echo "skip=true" >> "$GITHUB_OUTPUT"
           else
             echo "skip=false" >> "$GITHUB_OUTPUT"

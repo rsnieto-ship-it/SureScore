@@ -40,7 +40,12 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from datetime import datetime, timedelta
 from urllib.parse import urlencode
+import anthropic
 from anthropic import Anthropic
+from zoneinfo import ZoneInfo
+from concurrent.futures import ThreadPoolExecutor
+
+CENTRAL_TZ = ZoneInfo("America/Chicago")
 
 # ============================================================
 # DATABASE SETUP — PostgreSQL (migrated from SQLite 2026-03-24)
@@ -117,8 +122,27 @@ def mark_satire_used(conn, headline_id):
     conn.commit()
 
 
-def save_digest_to_db(conn, stories, recipients):
-    """Save a complete digest (history + stories) to PostgreSQL. Returns the digest ID."""
+def _ensure_subject_column(conn):
+    """Add DigestHistory.subject if missing. Script-owned column (not in the
+    Prisma schema); idempotent."""
+    cur = conn.cursor()
+    try:
+        cur.execute('ALTER TABLE "DigestHistory" ADD COLUMN IF NOT EXISTS subject TEXT')
+        conn.commit()
+    except Exception as e:
+        conn.rollback()
+        print(f"⚠️  Could not ensure subject column: {e}")
+
+
+def save_digest_to_db(conn, stories, recipients, subject=None):
+    """Save a complete digest (history + stories) to PostgreSQL. Returns the digest ID.
+
+    The approved subject line is persisted so the Tuesday mass send reuses it
+    instead of regenerating a different one at send time. The recipients
+    column stores a count, not the full subscriber list (which bloated the
+    row by ~60KB/week and leaked the list into a history table).
+    """
+    _ensure_subject_column(conn)
     cur = conn.cursor()
 
     satire_id = None
@@ -129,10 +153,10 @@ def save_digest_to_db(conn, stories, recipients):
 
     digest_cuid = _generate_cuid()
     cur.execute("""
-        INSERT INTO "DigestHistory" (id, recipients, "storyCount", "satireHeadlineId")
-        VALUES (%s, %s, %s, %s)
+        INSERT INTO "DigestHistory" (id, recipients, "storyCount", "satireHeadlineId", subject)
+        VALUES (%s, %s, %s, %s, %s)
         RETURNING id
-    """, (digest_cuid, ", ".join(recipients), len(stories), satire_id))
+    """, (digest_cuid, f"{len(recipients)} subscribers", len(stories), satire_id, subject))
     digest_id = cur.fetchone()[0]
 
     for i, story in enumerate(stories):
@@ -161,29 +185,45 @@ def save_digest_to_db(conn, stories, recipients):
     return digest_id
 
 
-def load_digest_from_db(conn, digest_id):
-    """Load a previously saved digest from PostgreSQL (no API calls).
-
-    digest_id can be a CUID string or an integer (for backward compatibility
-    with command-line usage like --send-digest 36). Integer IDs are resolved
-    by finding the Nth digest in chronological order.
-    """
+def resolve_digest_cuid(conn, digest_id):
+    """Resolve an integer digest number (Nth chronologically) or CUID string
+    to the canonical CUID, or None if not found. Send paths must use the CUID —
+    passing the raw integer to send_email keyed DigestSendLog rows and tracking
+    URLs to e.g. "36", which never matched --send-all's dedupe or analytics."""
     cur = conn.cursor()
-
-    # Support integer IDs by mapping to the Nth digest chronologically
     if isinstance(digest_id, int) or (isinstance(digest_id, str) and digest_id.isdigit()):
         offset = int(digest_id) - 1
         cur.execute("""
             SELECT id FROM "DigestHistory" ORDER BY "sentAt" ASC LIMIT 1 OFFSET %s
         """, (offset,))
         row = cur.fetchone()
-        if not row:
-            return None
-        digest_id = row[0]
-    else:
-        cur.execute('SELECT id FROM "DigestHistory" WHERE id = %s', (digest_id,))
-        if not cur.fetchone():
-            return None
+        return row[0] if row else None
+    cur.execute('SELECT id FROM "DigestHistory" WHERE id = %s', (digest_id,))
+    return digest_id if cur.fetchone() else None
+
+
+def load_digest_subject(conn, digest_id):
+    """Load the persisted subject line for a digest, or None."""
+    try:
+        cur = conn.cursor()
+        cur.execute('SELECT subject FROM "DigestHistory" WHERE id = %s', (str(digest_id),))
+        row = cur.fetchone()
+        return row[0] if row and row[0] else None
+    except Exception:
+        conn.rollback()  # subject column may not exist yet on first run
+        return None
+
+
+def load_digest_from_db(conn, digest_id):
+    """Load a previously saved digest from PostgreSQL (no API calls).
+
+    digest_id can be a CUID string or an integer (for backward compatibility
+    with command-line usage like --send-digest 36).
+    """
+    digest_id = resolve_digest_cuid(conn, digest_id)
+    if not digest_id:
+        return None
+    cur = conn.cursor()
 
     cur.execute("""
         SELECT title, summary, source, category, link, take, published,
@@ -360,29 +400,6 @@ def pg_update_digest_status(digest_id, status):
             pass
 
 
-def pg_record_send(digest_id, email_addr, batch_num):
-    """Record a successful send in DigestSend."""
-    pg = _get_pg_conn()
-    if not pg:
-        return
-    try:
-        cuid = _generate_cuid()
-        cur = pg.cursor()
-        cur.execute("""
-            INSERT INTO "DigestSend" (id, "digestId", email, batch, "sentAt")
-            VALUES (%s, %s, %s, %s, NOW())
-            ON CONFLICT ("digestId", email) DO NOTHING
-        """, (cuid, digest_id, email_addr, batch_num))
-        pg.commit()
-        cur.close()
-        pg.close()
-    except Exception as e:
-        try:
-            pg.close()
-        except Exception:
-            pass
-
-
 def pg_load_selected_candidates(digest_id):
     """Load the 5 selected candidates from PostgreSQL."""
     pg = _get_pg_conn()
@@ -464,7 +481,9 @@ AWS_SECRET_ACCESS_KEY = os.environ.get("AWS_SECRET_ACCESS_KEY")
 AWS_SES_REGION = os.environ.get("AWS_SES_REGION", "us-east-1")
 SES_SENDER = os.environ.get("SES_SENDER", "SureScore Intel <info@surescore.com>")
 
-# Recipients — from Postgres if DATABASE_URL is set, else fall back to env var
+# Recipients — from Postgres if DATABASE_URL is set, else fall back to env var.
+# Loaded lazily: most modes (--analytics, --add, --clicks, ...) never need the
+# full subscriber list, and eager loading cost a DB connection on every run.
 def _load_recipients():
     database_url = os.environ.get("DATABASE_URL")
     if database_url:
@@ -480,10 +499,16 @@ def _load_recipients():
                 return recipients
         except Exception as e:
             print(f"⚠️  Could not load recipients from DB: {e}")
-    raw = os.environ.get("DIGEST_RECIPIENTS", "you@gmail.com, teammate@gmail.com")
+    raw = os.environ.get("DIGEST_RECIPIENTS", "")
     return [r.strip() for r in raw.split(",") if r.strip()]
 
-RECIPIENTS = _load_recipients()
+_RECIPIENTS_CACHE = None
+
+def get_recipients():
+    global _RECIPIENTS_CACHE
+    if _RECIPIENTS_CACHE is None:
+        _RECIPIENTS_CACHE = _load_recipients()
+    return _RECIPIENTS_CACHE
 
 # Roy's email for curation workflow
 ROY_EMAIL = os.environ.get("ROY_EMAIL", "roy@surescore.com")
@@ -491,6 +516,43 @@ ROY_EMAIL = os.environ.get("ROY_EMAIL", "roy@surescore.com")
 # Unsubscribe link signing
 UNSUBSCRIBE_SECRET = os.environ.get("UNSUBSCRIBE_SECRET", "")
 SITE_URL = os.environ.get("SITE_URL", "https://surescore.com")
+
+
+def _send_alert_email(subject, body):
+    """Email Roy + Elizabeth when a run fails. Never raises — alerting must not
+    mask the original failure."""
+    try:
+        if not (AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY):
+            print("   ⚠️  Cannot send failure alert (no SES credentials)")
+            return
+        raw = os.environ.get("DIGEST_RECIPIENTS", ROY_EMAIL)
+        alert_recipients = [r.strip() for r in raw.split(",") if r.strip()] or [ROY_EMAIL]
+        ses = boto3.client(
+            "ses",
+            region_name=AWS_SES_REGION,
+            aws_access_key_id=AWS_ACCESS_KEY_ID,
+            aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
+        )
+        ses.send_email(
+            Source=SES_SENDER,
+            Destination={"ToAddresses": alert_recipients},
+            Message={
+                "Subject": {"Data": f"🚨 Digest FAILURE: {subject}"},
+                "Body": {"Text": {"Data": body}},
+            },
+        )
+        print(f"   📣 Failure alert emailed to {', '.join(alert_recipients)}")
+    except Exception as e:
+        print(f"   ⚠️  Failure alert could not be sent: {e}")
+
+
+def _fail(subject, body, alert=True):
+    """Print, optionally email an alert, and exit nonzero so the workflow run
+    goes red. Use on any path where the run's purpose did not happen."""
+    print(f"\n❌ FAILED: {subject}\n   {body}\n")
+    if alert:
+        _send_alert_email(subject, body)
+    sys.exit(1)
 
 
 def _build_unsubscribe_url(email_addr):
@@ -953,8 +1015,20 @@ RELEVANCE: Districts that start TSIA readiness in 8th grade don't just save doll
 # API RETRY HELPER
 # ============================================================
 
-def _call_with_retry(api_func, max_retries=3, backoff_delays=(5, 10, 20)):
-    """Call an API function with exponential backoff on 529 (overloaded) errors.
+def _is_retryable_api_error(e):
+    """Retry on rate limits (429), overload (529), server errors (5xx), and
+    connection failures. Auth/validation errors (400/401/404) are permanent."""
+    if isinstance(e, anthropic.APIConnectionError):
+        return True
+    if isinstance(e, anthropic.RateLimitError):
+        return True
+    if isinstance(e, anthropic.APIStatusError):
+        return e.status_code == 529 or e.status_code >= 500
+    return False
+
+
+def _call_with_retry(api_func, max_retries=3, backoff_delays=(5, 15, 40)):
+    """Call an API function with backoff on transient errors (429/5xx/529/network).
 
     Args:
         api_func: A callable that makes the API request (no args).
@@ -965,30 +1039,38 @@ def _call_with_retry(api_func, max_retries=3, backoff_delays=(5, 10, 20)):
         The API response on success.
 
     Raises:
-        The last exception if all retries are exhausted.
+        The last exception if all retries are exhausted, or immediately on
+        permanent errors (auth, bad request, model not found).
     """
-    last_exception = None
     for attempt in range(max_retries + 1):
         try:
             return api_func()
         except Exception as e:
-            last_exception = e
-            error_str = str(e)
-            # Retry on 529 (overloaded) or 529-like errors
-            if "529" in error_str or "overloaded" in error_str.lower():
-                if attempt < max_retries:
-                    delay = backoff_delays[min(attempt, len(backoff_delays) - 1)]
-                    print(f"   ⏳ API overloaded (529), retrying in {delay}s (attempt {attempt + 1}/{max_retries})...")
-                    time.sleep(delay)
-                    continue
-            # Non-529 errors: don't retry
+            if _is_retryable_api_error(e) and attempt < max_retries:
+                delay = backoff_delays[min(attempt, len(backoff_delays) - 1)]
+                print(f"   ⏳ Transient API error ({type(e).__name__}), retrying in {delay}s (attempt {attempt + 1}/{max_retries})...")
+                time.sleep(delay)
+                continue
             raise
-    raise last_exception
 
 
 # ============================================================
 # STEP 1: FETCH NEWS
 # ============================================================
+
+def _fetch_one_feed(feed_info):
+    """Fetch one RSS feed with a hard timeout. feedparser.parse(url) has no
+    timeout of its own — a single wedged feed used to hang the whole run."""
+    try:
+        resp = requests.get(
+            feed_info["url"], timeout=15,
+            headers={"User-Agent": "Mozilla/5.0 (SureScoreDigest/1.0)"},
+        )
+        return feedparser.parse(resp.content)
+    except Exception as e:
+        print(f"   ⚠️  Feed fetch failed for {feed_info['name']}: {e}")
+        return None
+
 
 def fetch_news():
     """Pull stories from RSS feeds and filter for relevance."""
@@ -997,10 +1079,14 @@ def fetch_news():
     cutoff_national = datetime.now() - timedelta(days=7)  # National: last 7 days (weekly cadence)
     cutoff_texas = datetime.now() - timedelta(days=7)    # Texas: last 7 days
 
-    for feed_info in RSS_FEEDS:
+    with ThreadPoolExecutor(max_workers=8) as pool:
+        parsed_feeds = list(pool.map(_fetch_one_feed, RSS_FEEDS))
+
+    for feed_info, feed in zip(RSS_FEEDS, parsed_feeds):
         try:
             print(f"   → {feed_info['name']}...")
-            feed = feedparser.parse(feed_info["url"])
+            if feed is None:
+                continue
 
             for entry in feed.entries[:30]:  # Check up to 30 per feed
                 # Parse publication date
@@ -1484,17 +1570,72 @@ def _is_refusal_take(take_text):
     return any(phrase in lower for phrase in REFUSAL_PHRASES)
 
 
+def _parse_take_response(raw_text):
+    """Parse the SYNOPSIS/HIGHLIGHTS/TAKE/RELEVANCE response format.
+
+    Shared by the primary take call and the filler-retry call so parsing
+    fixes land in both paths.
+    """
+    synopsis_match = re.search(r"SYNOPSIS:\s*(.+?)(?=\nHIGHLIGHTS:|\nTAKE:|\nRELEVANCE:|\Z)", raw_text, re.DOTALL)
+    synopsis_text = synopsis_match.group(1).strip() if synopsis_match else ""
+
+    highlights_match = re.search(r"HIGHLIGHTS:\s*(.+?)(?=\nTAKE:|\nRELEVANCE:|\Z)", raw_text, re.DOTALL)
+    highlights = []
+    bullets = []
+    if highlights_match:
+        for line in highlights_match.group(1).strip().splitlines():
+            line = re.sub(r"^[\s\-\*•]+", "", line).strip()
+            if not line:
+                continue
+            hl_match = re.match(r"LABEL:\s*(.+?)\s*\|\s*TEXT:\s*(.+)", line)
+            if hl_match:
+                label = hl_match.group(1).strip()
+                text_val = hl_match.group(2).strip()
+                highlights.append({"label": label, "text": text_val})
+                bullets.append(f"{label}: {text_val}")
+            else:
+                highlights.append({"label": "Key Point", "text": line})
+                bullets.append(line)
+    highlights = highlights[:4]
+    bullets = bullets[:4]
+
+    take_match = re.search(r"TAKE:\s*(.+?)(?=\nRELEVANCE:|\nHIGHLIGHTS:|\nSYNOPSIS:|\Z)", raw_text, re.DOTALL)
+    take_text = take_match.group(1).strip() if take_match else raw_text
+    take_text = re.sub(r"^\*{0,2}SureScore Take:?\*{0,2}\s*", "", take_text).strip()
+
+    relevance_match = re.search(r"RELEVANCE:\s*(.+?)(?=\nTAKE:|\nHIGHLIGHTS:|\nSYNOPSIS:|\Z)", raw_text, re.DOTALL)
+    relevance_text = relevance_match.group(1).strip() if relevance_match else ""
+
+    return {
+        "synopsis": synopsis_text,
+        "highlights": highlights,
+        "bullets": bullets,
+        "take": take_text,
+        "relevance": relevance_text,
+    }
+
+
+# System prompt sent as a cacheable block: calls 2+ in the take loop read the
+# ~3K-token prefix from cache instead of re-processing it at full price.
+def _cached_system_prompt():
+    return [{"type": "text", "text": SYSTEM_PROMPT, "cache_control": {"type": "ephemeral"}}]
+
+
 def generate_takes(stories):
     """Use Claude API to generate a SureScore Take + bullet summary for each story."""
     print("🤖 Generating SureScore Takes...")
     client = Anthropic(api_key=ANTHROPIC_API_KEY)
 
+    # Prefetch all article bodies concurrently instead of one blocking
+    # requests.get between each API call.
+    with ThreadPoolExecutor(max_workers=6) as pool:
+        prefetched = list(pool.map(lambda s: fetch_article_text(s.get("link")), stories))
+
     good_stories = []
     for i, story in enumerate(stories):
         print(f"   → Take {i+1}/{len(stories)}: {story['title'][:60]}...")
 
-        # Fetch full article text
-        article_text = fetch_article_text(story.get("link"))
+        article_text = prefetched[i]
         article_fetched = bool(article_text)
         if article_text:
             # Truncate to ~3000 chars to stay within token limits
@@ -1522,7 +1663,7 @@ def generate_takes(stories):
                     model="claude-sonnet-5",
                     thinking={"type": "disabled"},
                     max_tokens=1000,
-                    system=SYSTEM_PROMPT,
+                    system=_cached_system_prompt(),
                     messages=[{
                         "role": "user",
                         "content": (
@@ -1543,112 +1684,56 @@ def generate_takes(stories):
                 )
 
             message = _call_with_retry(_make_take_request)
-            raw_text = message.content[0].text.strip()
-
-            # Parse SYNOPSIS
-            synopsis_match = re.search(r"SYNOPSIS:\s*(.+?)(?=\nHIGHLIGHTS:|\nTAKE:|\nRELEVANCE:|\Z)", raw_text, re.DOTALL)
-            synopsis_text = synopsis_match.group(1).strip() if synopsis_match else ""
-
-            # Parse HIGHLIGHTS as list of {label, text} dicts
-            highlights_match = re.search(r"HIGHLIGHTS:\s*(.+?)(?=\nTAKE:|\nRELEVANCE:|\Z)", raw_text, re.DOTALL)
-            highlights = []
-            bullets = []
-            if highlights_match:
-                for line in highlights_match.group(1).strip().splitlines():
-                    line = re.sub(r"^[\s\-\*•]+", "", line).strip()
-                    if not line:
-                        continue
-                    # Try LABEL: X | TEXT: Y format
-                    hl_match = re.match(r"LABEL:\s*(.+?)\s*\|\s*TEXT:\s*(.+)", line)
-                    if hl_match:
-                        label = hl_match.group(1).strip()
-                        text_val = hl_match.group(2).strip()
-                        highlights.append({"label": label, "text": text_val})
-                        bullets.append(f"{label}: {text_val}")
-                    else:
-                        # Fallback: plain bullet line
-                        highlights.append({"label": "Key Point", "text": line})
-                        bullets.append(line)
-            highlights = highlights[:4]
-            bullets = bullets[:4]
-
-            # Parse TAKE
-            take_match = re.search(r"TAKE:\s*(.+?)(?=\nRELEVANCE:|\nHIGHLIGHTS:|\nSYNOPSIS:|\Z)", raw_text, re.DOTALL)
-            if take_match:
-                take_text = take_match.group(1).strip()
-            else:
-                take_text = raw_text
-
-            # Strip any "SureScore Take:" prefix the model may add
-            take_text = re.sub(r"^\*{0,2}SureScore Take:?\*{0,2}\s*", "", take_text).strip()
-
-            # Parse RELEVANCE
-            relevance_match = re.search(r"RELEVANCE:\s*(.+?)(?=\nTAKE:|\nHIGHLIGHTS:|\nSYNOPSIS:|\Z)", raw_text, re.DOTALL)
-            relevance_text = relevance_match.group(1).strip() if relevance_match else ""
+            parsed = _parse_take_response(message.content[0].text.strip())
 
             # If Claude generated filler, retry once with a stronger prompt
-            all_generated_text = f"{take_text} {synopsis_text} {' '.join(str(h) for h in highlights)} {' '.join(str(b) for b in bullets)}"
+            all_generated_text = f"{parsed['take']} {parsed['synopsis']} {' '.join(str(h) for h in parsed['highlights'])} {' '.join(str(b) for b in parsed['bullets'])}"
             if _is_refusal_take(all_generated_text):
                 print(f"      🔄 Filler detected — retrying with stronger prompt...")
-                retry_response = client.messages.create(
-                    model="claude-sonnet-5",
-                    thinking={"type": "disabled"},
-                    max_tokens=1000,
-                    system=SYSTEM_PROMPT,
-                    messages=[{
-                        "role": "user",
-                        "content": (
-                            f"Headline: {story['title']}\n"
-                            f"Source: {story['source']}\n\n"
-                            f"Summary: {story['summary']}\n\n"
-                            f"Write your analysis based on the headline and your knowledge of this topic. "
-                            f"Be confident and specific — use real data points, trends, and context you know about this subject. "
-                            f"DO NOT use placeholder language, DO NOT say data is missing or unavailable. "
-                            f"Write as if you are an expert who read this article and is now briefing school counselors.\n\n"
-                            f"SYNOPSIS: [2-sentence neutral summary]\n"
-                            f"HIGHLIGHTS:\n"
-                            f"- LABEL: [label] | TEXT: [specific insight]\n"
-                            f"- LABEL: [label] | TEXT: [specific insight]\n"
-                            f"- LABEL: [label] | TEXT: [specific insight]\n"
-                            f"TAKE: [1-2 sentence sharp editorial take]\n"
-                            f"RELEVANCE: [1 sentence connecting to TSI/college readiness]"
-                        )
-                    }]
-                )
-                raw_text = retry_response.content[0].text.strip()
-                # Re-parse
-                synopsis_match = re.search(r"SYNOPSIS:\s*(.+?)(?=\nHIGHLIGHTS:|\nTAKE:|\nRELEVANCE:|\Z)", raw_text, re.DOTALL)
-                synopsis_text = synopsis_match.group(1).strip() if synopsis_match else synopsis_text
-                highlights_match = re.search(r"HIGHLIGHTS:\s*(.+?)(?=\nTAKE:|\nRELEVANCE:|\Z)", raw_text, re.DOTALL)
-                highlights = []
-                bullets = []
-                if highlights_match:
-                    for line in highlights_match.group(1).strip().splitlines():
-                        line = re.sub(r"^[\s\-\*•]+", "", line).strip()
-                        if not line:
-                            continue
-                        hl_match = re.match(r"LABEL:\s*(.+?)\s*\|\s*TEXT:\s*(.+)", line)
-                        if hl_match:
-                            highlights.append({"label": hl_match.group(1).strip(), "text": hl_match.group(2).strip()})
-                            bullets.append(f"{hl_match.group(1).strip()}: {hl_match.group(2).strip()}")
-                        else:
-                            highlights.append({"label": "Key Point", "text": line})
-                            bullets.append(line)
-                highlights = highlights[:4]
-                bullets = bullets[:4]
-                take_match = re.search(r"TAKE:\s*(.+?)(?=\nRELEVANCE:|\nHIGHLIGHTS:|\nSYNOPSIS:|\Z)", raw_text, re.DOTALL)
-                if take_match:
-                    take_text = take_match.group(1).strip()
-                take_text = re.sub(r"^\*{0,2}SureScore Take:?\*{0,2}\s*", "", take_text).strip()
-                relevance_match = re.search(r"RELEVANCE:\s*(.+?)(?=\nTAKE:|\nHIGHLIGHTS:|\nSYNOPSIS:|\Z)", raw_text, re.DOTALL)
-                relevance_text = relevance_match.group(1).strip() if relevance_match else relevance_text
+
+                def _make_retry_request():
+                    return client.messages.create(
+                        model="claude-sonnet-5",
+                        thinking={"type": "disabled"},
+                        max_tokens=1000,
+                        system=_cached_system_prompt(),
+                        messages=[{
+                            "role": "user",
+                            "content": (
+                                f"Headline: {story['title']}\n"
+                                f"Source: {story['source']}\n\n"
+                                f"Summary: {story['summary']}\n\n"
+                                f"Write your analysis based on the headline and your knowledge of this topic. "
+                                f"Be confident and specific — use real data points, trends, and context you know about this subject. "
+                                f"DO NOT use placeholder language, DO NOT say data is missing or unavailable. "
+                                f"Write as if you are an expert who read this article and is now briefing school counselors.\n\n"
+                                f"SYNOPSIS: [2-sentence neutral summary]\n"
+                                f"HIGHLIGHTS:\n"
+                                f"- LABEL: [label] | TEXT: [specific insight]\n"
+                                f"- LABEL: [label] | TEXT: [specific insight]\n"
+                                f"- LABEL: [label] | TEXT: [specific insight]\n"
+                                f"TAKE: [1-2 sentence sharp editorial take]\n"
+                                f"RELEVANCE: [1 sentence connecting to TSI/college readiness]"
+                            )
+                        }]
+                    )
+
+                retry_response = _call_with_retry(_make_retry_request)
+                retry_parsed = _parse_take_response(retry_response.content[0].text.strip())
+                # Keep the original field when the retry left one blank
+                for key in ("synopsis", "take", "relevance"):
+                    if retry_parsed[key]:
+                        parsed[key] = retry_parsed[key]
+                if retry_parsed["highlights"]:
+                    parsed["highlights"] = retry_parsed["highlights"]
+                    parsed["bullets"] = retry_parsed["bullets"]
                 print(f"      ✅ Retry successful")
 
-            story["take"] = take_text
-            story["synopsis"] = synopsis_text
-            story["highlights"] = highlights
-            story["relevance"] = relevance_text
-            story["bullets"] = bullets  # backward compat
+            story["take"] = parsed["take"]
+            story["synopsis"] = parsed["synopsis"]
+            story["highlights"] = parsed["highlights"]
+            story["relevance"] = parsed["relevance"]
+            story["bullets"] = parsed["bullets"]  # backward compat
 
             good_stories.append(story)
         except Exception as e:
@@ -1666,7 +1751,8 @@ def generate_subject_line(stories):
     headlines = "\n".join(f"- {s['title']}" for s in stories if not s.get("satire"))
 
     try:
-        response = client.messages.create(
+        def _make_subject_request():
+            return client.messages.create(
             model="claude-sonnet-5",
             thinking={"type": "disabled"},
             max_tokens=150,
@@ -1687,6 +1773,8 @@ def generate_subject_line(stories):
                 ),
             }],
         )
+
+        response = _call_with_retry(_make_subject_request)
         subject = response.content[0].text.strip().strip('"')
         print(f"   ✅ Subject: {subject}")
         return subject
@@ -1741,30 +1829,55 @@ def _get_used_satire_headlines(conn):
     return [row[0] for row in cur.fetchall()]
 
 
+def _normalize_headline(h):
+    """Case/punctuation-insensitive form for repeat detection."""
+    return re.sub(r"[^a-z0-9 ]", "", h.lower()).strip()
+
+
 def generate_satire(conn):
     """Generate a brand-new satirical headline via Claude, then write the summary/take."""
     print("😂 Generating satirical opener...")
 
     used = _get_used_satire_headlines(conn)
-    used_list = "\n".join(f"- {h}" for h in used) if used else "- (none yet)"
+    used_normalized = {_normalize_headline(h) for h in used}
+    # Prompt gets only the 150 most recent (the list grows forever); the
+    # code-level repeat check below covers the full history.
+    used_list = "\n".join(f"- {h}" for h in used[:150]) if used else "- (none yet)"
 
     try:
         client = Anthropic(api_key=ANTHROPIC_API_KEY)
 
-        # Step 1: Generate a fresh headline
-        def _make_headline_request():
-            return client.messages.create(
-                model="claude-sonnet-5",
-                thinking={"type": "disabled"},
-                max_tokens=250,
-                messages=[{
-                    "role": "user",
-                    "content": SATIRE_HEADLINE_PROMPT.format(used_headlines=used_list),
-                }]
-            )
+        # Step 1: Generate a fresh headline. The prompt asks Claude to avoid
+        # used headlines, but per CLAUDE.md a repeat is a bug — so enforce
+        # uniqueness in code with up to 3 attempts.
+        headline = None
+        for attempt in range(3):
+            extra = ""
+            if attempt > 0:
+                extra = "\n\nYour previous attempt repeated an already-used headline. Generate something on a COMPLETELY different topic."
 
-        msg = _call_with_retry(_make_headline_request)
-        headline = msg.content[0].text.strip().strip('"').strip("'")
+            def _make_headline_request(extra=extra):
+                return client.messages.create(
+                    model="claude-sonnet-5",
+                    thinking={"type": "disabled"},
+                    max_tokens=250,
+                    messages=[{
+                        "role": "user",
+                        "content": SATIRE_HEADLINE_PROMPT.format(used_headlines=used_list) + extra,
+                    }]
+                )
+
+            msg = _call_with_retry(_make_headline_request)
+            candidate = msg.content[0].text.strip().strip('"').strip("'")
+            if _normalize_headline(candidate) not in used_normalized:
+                headline = candidate
+                break
+            print(f"   🔁 Headline repeats a used one, regenerating ({attempt + 1}/3): {candidate[:60]}")
+
+        if headline is None:
+            print("   ⚠️  Could not generate a fresh satire headline after 3 attempts — skipping satire this week.")
+            return None
+
         print(f"   📰 New headline: {headline[:70]}...")
 
         # Save to DB so it's tracked as used
@@ -1858,13 +1971,21 @@ def save_candidates(conn, stories):
             bool(story.get("texas")),
         ))
 
-    # Renumber all positions: manual candidates first, then auto-fetched
+    # Renumber unselected positions: manual candidates first, then auto-fetched.
+    # Start AFTER the highest already-selected position — renumbering from 1
+    # could collide with positions held by selected rows, making --select
+    # match two rows per number.
+    cur.execute(
+        'SELECT COALESCE(MAX(position), 0) AS max_pos FROM "CandidateStory" WHERE "batchDate" = %s AND selected = true',
+        (batch_date,)
+    )
+    start_pos = cur.fetchone()["max_pos"] + 1
     cur.execute("""
         SELECT id, manual FROM "CandidateStory"
         WHERE "batchDate" = %s AND selected = false
         ORDER BY manual DESC, position ASC
     """, (batch_date,))
-    for pos, row in enumerate(cur.fetchall(), start=1):
+    for pos, row in enumerate(cur.fetchall(), start=start_pos):
         cur.execute('UPDATE "CandidateStory" SET position = %s WHERE id = %s', (pos, row["id"]))
 
     conn.commit()
@@ -2148,59 +2269,71 @@ def send_auto_select_notification(selected_stories, rubric):
         print(f"   ❌ Failed to send notification: {e}")
 
 
+def _current_week_digest_exists(conn):
+    """True if a digest was already created in the current ISO week (UTC).
+
+    Replaces the old `age_days < 7` check: last week's digest was almost
+    always created Tuesday, so this Tuesday it read as 6 days old — 'recent' —
+    and auto-select skipped the entire week.
+    """
+    cur = conn.cursor()
+    cur.execute('SELECT "sentAt" FROM "DigestHistory" ORDER BY "sentAt" DESC LIMIT 1')
+    row = cur.fetchone()
+    if not row or not row[0] or not isinstance(row[0], datetime):
+        return False
+    return datetime.now().isocalendar()[:2] == row[0].isocalendar()[:2]
+
+
 def run_auto_select(conn):
     """Auto-select top 5 candidates using the learned rubric.
 
-    This is the fallback that fires Tuesday 6am if Roy hasn't manually selected.
-    If selections already exist, it exits cleanly.
+    This is the Tuesday fallback if Roy hasn't manually selected.
+    If a digest already exists for the current ISO week, it exits cleanly.
     """
     print("\n🤖 AUTO-SELECT MODE — Checking for manual picks\n")
 
+    if _current_week_digest_exists(conn):
+        print("\n✅ A digest already exists for this ISO week. Skipping auto-select.\n")
+        return
+
     batch_date, candidates = load_latest_candidates(conn)
     if not candidates:
-        print("❌ No candidate batch found. Run --preview first.")
-        return
+        _fail("No candidate batch found",
+              "Auto-select has nothing to pick from — Monday's preview never saved a batch. "
+              "Run the Monday Preview workflow, then --auto-select or --select.")
 
     print(f"   Using batch from {batch_date} ({len(candidates)} candidates)")
+    _check_batch_freshness(batch_date)
 
-    # Check if manual selections already exist
+    # If picks exist but NO digest exists for this week, a previous select run
+    # died between marking and saving — heal by generating from those picks
+    # instead of skipping (skipping meant no newsletter that week).
     already_selected = [c for c in candidates if c.get("selected")]
     if already_selected:
-        print(f"\n✅ Manual selection found ({len(already_selected)} picks). Skipping auto-select.\n")
-        return
-
-    # Check if a digest already exists for this batch (Roy used --select)
-    cur = conn.cursor()
-    cur.execute('SELECT id, "sentAt" FROM "DigestHistory" ORDER BY "sentAt" DESC LIMIT 1')
-    row = cur.fetchone()
-    if row and row[1]:
-        age_days = (datetime.now() - row[1]).days
-        if age_days < 7:
-            print(f"\n✅ Recent digest #{row[0]} already exists. Skipping auto-select.\n")
-            return
-
-    # Compute rubric
-    rubric = compute_rubric(conn)
-    print(f"   Rubric computed from {rubric['batch_count']} weeks of data")
-
-    if rubric["batch_count"] < MIN_RUBRIC_BATCHES:
-        # Not enough data — fall back to position-based top 5 (existing tier priority)
-        print(f"   ⚠️  Only {rubric['batch_count']} weeks (need {MIN_RUBRIC_BATCHES}). Using default priority.\n")
-        top5 = candidates[:5]
+        print(f"   🔧 Found {len(already_selected)} marked picks but no digest this week — "
+              f"a previous select run must have failed after marking. Generating from those picks.")
+        top5 = already_selected
+        rubric = None
+        positions = [c["position"] for c in top5]
     else:
-        # Score and rank
-        scored = score_candidates(candidates, rubric)
-        top5 = scored[:5]
-        print(f"\n   📊 Top 5 by rubric score:")
-        for c in top5:
-            tx = " [TX]" if c.get("is_texas") else ""
-            print(f"      #{c['position']:2d} ({c['_rubric_score']:.3f}) {c['title'][:65]}{tx}")
-        print()
+        # Compute rubric
+        rubric = compute_rubric(conn)
+        print(f"   Rubric computed from {rubric['batch_count']} weeks of data")
 
-    # Mark as selected
-    positions = [c["position"] for c in top5]
-    mark_candidates_selected(conn, batch_date, positions)
-    print(f"   ✅ Marked positions {positions} as selected")
+        if rubric["batch_count"] < MIN_RUBRIC_BATCHES:
+            # Not enough data — fall back to position-based top 5 (existing tier priority)
+            print(f"   ⚠️  Only {rubric['batch_count']} weeks (need {MIN_RUBRIC_BATCHES}). Using default priority.\n")
+            top5 = candidates[:5]
+        else:
+            # Score and rank
+            scored = score_candidates(candidates, rubric)
+            top5 = scored[:5]
+            print(f"\n   📊 Top 5 by rubric score:")
+            for c in top5:
+                tx = " [TX]" if c.get("is_texas") else ""
+                print(f"      #{c['position']:2d} ({c['_rubric_score']:.3f}) {c['title'][:65]}{tx}")
+            print()
+        positions = [c["position"] for c in top5]
 
     # Build story dicts for generation pipeline
     selected = []
@@ -2217,25 +2350,37 @@ def run_auto_select(conn):
             "_rubric_reasons": c.get("_rubric_reasons", []),
         })
 
-    # Generate takes
+    # Generate takes BEFORE marking picks as consumed (all-or-nothing)
+    picked_count = len(selected)
     selected = generate_takes(selected)
-    if not selected:
-        print("⚠️  No stories survived take generation.\n")
-        return
+    if len(selected) < picked_count:
+        _fail(
+            f"Auto-select take generation incomplete ({len(selected)}/{picked_count})",
+            f"Only {len(selected)} of {picked_count} stories survived take generation. "
+            f"Nothing was saved. Fix the error above and re-run --auto-select, or use --select.",
+        )
+
+    if not already_selected:
+        mark_candidates_selected(conn, batch_date, positions)
+        print(f"   ✅ Marked positions {positions} as selected")
 
     # Generate satirical opener
     satire = generate_satire(conn)
     if satire:
         selected.insert(0, satire)
 
+    # Persist the subject so the mass send reuses it
+    subject = generate_subject_line(selected)
+
     # Save to DB
-    digest_id = save_digest_to_db(conn, selected, RECIPIENTS)
+    digest_id = save_digest_to_db(conn, selected, get_recipients(), subject=subject)
     print(f"📦 Auto-select digest saved as #{digest_id}")
 
     # Notify Roy
-    send_auto_select_notification(top5, rubric)
+    if rubric is not None:
+        send_auto_select_notification(top5, rubric)
 
-    print(f"\n✅ Auto-select complete. Digest #{digest_id} ready for --send-all at 9am.\n")
+    print(f"\n✅ Auto-select complete. Digest #{digest_id} will go out via the scheduled Tuesday send.\n")
 
 
 # ============================================================
@@ -2849,7 +2994,10 @@ MASS_SEND_THRESHOLD = 10    # More than this requires --send-all
 
 def _check_send_safeguards(recipients, force=False):
     """Enforce send safeguards. Returns True if safe to proceed, False otherwise."""
-    today = datetime.now().weekday()  # 0=Mon, 1=Tue, 2=Wed, ...
+    # Day-of-week in CENTRAL time — GitHub runners are UTC, and Tuesday UTC
+    # starts Monday 6-7pm CT, which used to let a Monday-evening mass send
+    # through the "Tuesday/Wednesday only" guard.
+    today = datetime.now(CENTRAL_TZ).weekday()  # 0=Mon, 1=Tue, 2=Wed, ...
 
     # Guard 1: Day-of-week check for mass sends
     if len(recipients) > MASS_SEND_THRESHOLD and today not in SEND_ALLOWED_DAYS:
@@ -2875,20 +3023,65 @@ def _check_send_safeguards(recipients, force=False):
     return True
 
 
-def send_email(stories, recipients=None, digest_id=None, conn=None, pg_digest_id=None, batch_num=1, force=False):
-    """Send the digest email via AWS SES (50k/day limit)."""
+def _flush_send_logs(log_conn, digest_id, pg_digest_id, batch_num, pending):
+    """Write send-log rows for `pending` recipients (both DigestSendLog and
+    DigestSend live in the same Postgres) and commit. Returns True on success;
+    rolls back and returns False on failure. ON CONFLICT DO NOTHING makes
+    re-flushing the same rows after a rollback safe."""
+    try:
+        cur = log_conn.cursor()
+        for recipient in pending:
+            if digest_id:
+                cur.execute(
+                    'INSERT INTO "DigestSendLog" (id, "digestId", email) VALUES (%s, %s, %s) ON CONFLICT ("digestId", email) DO NOTHING',
+                    (_generate_cuid(), str(digest_id), recipient),
+                )
+            if pg_digest_id:
+                cur.execute(
+                    'INSERT INTO "DigestSend" (id, "digestId", email, batch, "sentAt") VALUES (%s, %s, %s, %s, NOW()) ON CONFLICT ("digestId", email) DO NOTHING',
+                    (_generate_cuid(), pg_digest_id, recipient, batch_num),
+                )
+        log_conn.commit()
+        return True
+    except Exception as e:
+        print(f"   ⚠️  Send-log flush failed: {e}")
+        try:
+            log_conn.rollback()
+        except Exception:
+            pass
+        return False
+
+
+def send_email(stories, recipients=None, digest_id=None, conn=None, pg_digest_id=None, batch_num=1, force=False, subject=None):
+    """Send the digest email via AWS SES (50k/day limit).
+
+    Send-log integrity: every send is buffered and flushed to the DB in
+    batches on ONE shared connection (the old code opened a new connection
+    per recipient and, worse, kept sending after a failed insert left the
+    transaction aborted — recipients then had no log row and the next
+    --send-all re-sent to them). If logging fails and a reconnect also
+    fails, the send ABORTS: a bounded stop is safer than mass duplicates.
+    """
     if recipients is None:
-        recipients = RECIPIENTS
+        recipients = get_recipients()
+    if not recipients:
+        print("❌ No recipients to send to.")
+        return None
 
     # Enforce safeguards before sending
     if not _check_send_safeguards(recipients, force=force):
-        return
+        return None
+
+    # Never mass-send without working unsubscribe links (CAN-SPAM/deliverability)
+    if len(recipients) > MASS_SEND_THRESHOLD and not UNSUBSCRIBE_SECRET:
+        print("❌ BLOCKED: UNSUBSCRIBE_SECRET is not set — refusing mass send without unsubscribe links.")
+        return None
 
     print("📧 Sending email digest via SES...")
 
     if not AWS_ACCESS_KEY_ID or not AWS_SECRET_ACCESS_KEY:
         print("❌ AWS SES credentials not set. Set AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY.")
-        return
+        return None
 
     ses_client = boto3.client(
         "ses",
@@ -2897,33 +3090,54 @@ def send_email(stories, recipients=None, digest_id=None, conn=None, pg_digest_id
         aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
     )
 
-    subject = generate_subject_line(stories)
+    # Subject priority: explicit arg > persisted with the digest > fresh API
+    # call (fallback only — regenerating at send time gave subscribers a
+    # different subject than the review copy Roy approved).
+    if not subject and conn and digest_id:
+        subject = load_digest_subject(conn, digest_id)
+    if not subject:
+        subject = generate_subject_line(stories)
 
     text_content = build_plaintext(stories)
     from urllib.parse import quote
     import time
 
+    # Render the ~40KB HTML once with per-recipient placeholder tokens and
+    # swap them per recipient, instead of re-templating for every subscriber.
+    EMAIL_TOKEN = "%%RECIPIENT-EMAIL%%"
+    UNSUB_TOKEN = "%%UNSUB-URL%%"
+    tracking_tpl = f"{SITE_URL}/api/track/open?e={EMAIL_TOKEN}&d={digest_id}" if digest_id and SITE_URL else None
+    click_tpl = f"{SITE_URL}/api/track/click?e={EMAIL_TOKEN}&d={digest_id}" if digest_id and SITE_URL else None
+    web_tpl = f"{SITE_URL}/digest/{pg_digest_id}?e={EMAIL_TOKEN}" if pg_digest_id and SITE_URL else None
+    unsub_tpl = UNSUB_TOKEN if UNSUBSCRIBE_SECRET else None
+    html_template = build_email_html(stories, unsubscribe_url=unsub_tpl, tracking_pixel_url=tracking_tpl, click_tracking_base=click_tpl, web_url=web_tpl)
+
     sent_count = 0
     fail_count = 0
+    pending = []  # sent but not yet flushed to the send logs
+    log_conn = conn if conn else (_get_pg_conn() if pg_digest_id else None)
+    log_enabled = bool(log_conn and (digest_id or pg_digest_id))
+    log_failed = False
+
+    def _flush_with_reconnect():
+        """Flush pending rows; on failure reconnect once and retry."""
+        nonlocal log_conn
+        if _flush_send_logs(log_conn, digest_id, pg_digest_id, batch_num, pending):
+            return True
+        print("   🔌 Reconnecting to database for send logs...")
+        fresh = _get_pg_conn()
+        if fresh:
+            log_conn = fresh
+            return _flush_send_logs(log_conn, digest_id, pg_digest_id, batch_num, pending)
+        return False
 
     for i, recipient in enumerate(recipients):
         try:
-            # Generate a per-recipient unsubscribe URL
             unsub_url = _build_unsubscribe_url(recipient) if UNSUBSCRIBE_SECRET else None
 
-            # Generate a per-recipient tracking pixel URL
-            tracking_url = None
-            click_base = None
-            if digest_id and SITE_URL:
-                tracking_url = f"{SITE_URL}/api/track/open?e={quote(recipient)}&d={digest_id}"
-                click_base = f"{SITE_URL}/api/track/click?e={quote(recipient)}&d={digest_id}"
-
-            # "Read online" web link (uses the Digest model ID)
-            web_link = None
-            if pg_digest_id and SITE_URL:
-                web_link = f"{SITE_URL}/digest/{pg_digest_id}?e={quote(recipient)}"
-
-            html_content = build_email_html(stories, unsubscribe_url=unsub_url, tracking_pixel_url=tracking_url, click_tracking_base=click_base, web_url=web_link)
+            html_content = html_template.replace(EMAIL_TOKEN, quote(recipient))
+            if unsub_tpl and unsub_url:
+                html_content = html_content.replace(UNSUB_TOKEN, unsub_url)
 
             msg = MIMEMultipart("alternative")
             msg["Subject"] = subject
@@ -2942,34 +3156,52 @@ def send_email(stories, recipients=None, digest_id=None, conn=None, pg_digest_id
                 RawMessage={"Data": msg.as_string()},
             )
 
-            sent_count += 1
-            if conn and digest_id:
-                conn.cursor().execute('INSERT INTO "DigestSendLog" (id, "digestId", email) VALUES (%s, %s, %s) ON CONFLICT ("digestId", email) DO NOTHING', (_generate_cuid(), str(digest_id), recipient))
-                if sent_count % 20 == 0:
-                    conn.commit()
-            if pg_digest_id:
-                pg_record_send(pg_digest_id, recipient, batch_num)
-            if (i + 1) % 50 == 0:
-                print(f"   📬 Progress: {i + 1}/{len(recipients)} sent...")
-
-            # Rate limit: ~10/sec to stay well under SES's 14/sec limit
-            if i < len(recipients) - 1:
-                time.sleep(0.1)
-
         except ClientError as e:
             fail_count += 1
             error_code = e.response["Error"]["Code"]
             print(f"   ❌ Failed to send to {recipient}: {error_code} — {e.response['Error']['Message']}")
+            continue
         except Exception as e:
             fail_count += 1
             print(f"   ❌ Failed to send to {recipient}: {e}")
+            continue
 
-    if conn:
-        conn.commit()
+        sent_count += 1
+        if log_enabled:
+            pending.append(recipient)
+            if len(pending) >= 20:
+                if _flush_with_reconnect():
+                    pending = []
+                else:
+                    log_failed = True
+                    print(f"   🛑 ABORTING send at {sent_count}/{len(recipients)}: cannot record sends. "
+                          f"{len(pending)} sent-but-unlogged recipients may be re-sent next run.")
+                    break
+
+        if (i + 1) % 50 == 0:
+            print(f"   📬 Progress: {i + 1}/{len(recipients)} sent...")
+
+        # Rate limit: ~10/sec to stay well under SES's 14/sec limit
+        if i < len(recipients) - 1:
+            time.sleep(0.1)
+
+    # Final flush of the remainder
+    unlogged = 0
+    if log_enabled and pending:
+        if _flush_with_reconnect():
+            pending = []
+        else:
+            log_failed = True
+    if log_failed:
+        unlogged = len(pending)
 
     print(f"\n🎉 Digest complete! ✅ {sent_count} sent, ❌ {fail_count} failed")
+    if log_failed:
+        print(f"   ⚠️  Send-log failure: {unlogged} sent recipients are NOT logged.")
 
-    return {"sent_count": sent_count, "fail_count": fail_count, "subject": subject}
+    return {"sent_count": sent_count, "fail_count": fail_count, "subject": subject,
+            "log_failed": log_failed, "unlogged": unlogged,
+            "attempted": len(recipients)}
 
 
 def _send_send_all_completion_email(stories, digest_id, summary, total_subscribers,
@@ -3274,8 +3506,9 @@ def run_preview(conn, skip_relevance_filter=False):
 
     stories = fetch_news()
     if not stories:
-        print("⚠️  No relevant stories found. Try adjusting keywords or adding more RSS feeds.\n")
-        return
+        _fail("Preview fetch found zero stories",
+              "No relevant stories were fetched from any RSS feed. Feeds may be down or the "
+              "network blocked — without a candidate batch, the whole week's digest chain stalls.")
 
     # Cross-digest dedup: remove stories sent in the last 14 days
     stories = filter_already_sent(conn, stories)
@@ -3343,6 +3576,24 @@ def run_preview(conn, skip_relevance_filter=False):
     print(f"\n✅ Done! Roy can reply with picks, or run: --select 1,3,7,12,15\n")
 
 
+def _check_batch_freshness(batch_date):
+    """Refuse to operate on a stale candidate batch. If Monday's preview
+    failed, the 'latest' batch is last week's — selecting from it would
+    regenerate already-sent articles under a fresh digest date that passes
+    every send guard."""
+    try:
+        batch_dt = datetime.strptime(str(batch_date), "%Y-%m-%d")
+    except ValueError:
+        return  # unexpected format; don't block on it
+    age_days = (datetime.now() - batch_dt).days
+    if age_days > 5:
+        _fail(
+            f"Candidate batch is {age_days} days old",
+            f"The latest candidate batch is dated {batch_date} — this week's Monday "
+            f"preview probably failed. Run the Monday Preview workflow first, then re-select.",
+        )
+
+
 def run_select(conn, selection_str, auto_send=False):
     """Manual selection mode: pick candidates by number, generate takes, send."""
     print(f"\n🎯 SELECT MODE — Generating digest from picks: {selection_str}\n")
@@ -3352,16 +3603,15 @@ def run_select(conn, selection_str, auto_send=False):
     positions = [p for p in positions if 1 <= p <= MAX_STORIES][:6]
 
     if not positions:
-        print("❌ No valid positions provided. Use --select 1,3,7,12,15")
-        return
+        _fail("Invalid picks", f"--select got '{selection_str}' — no valid positions. Use e.g. --select 1,3,7,12,15")
 
     # Load latest candidates
     batch_date, candidates = load_latest_candidates(conn)
     if not candidates:
-        print("❌ No candidate batch found. Run --preview first.")
-        return
+        _fail("No candidate batch found", "Run the Monday Preview workflow first, then re-select.")
 
     print(f"   Using batch from {batch_date}")
+    _check_batch_freshness(batch_date)
 
     # Get selected stories
     selected = []
@@ -3378,42 +3628,52 @@ def run_select(conn, selection_str, auto_send=False):
             })
 
     if not selected:
-        print(f"❌ None of the positions {positions} matched candidates.")
-        return
+        _fail("Picks did not match", f"None of the positions {positions} matched candidates in batch {batch_date}.")
 
-    print(f"   Selected {len(selected)} stories: {positions}\n")
+    picked_count = len(selected)
+    print(f"   Selected {picked_count} stories: {positions}\n")
 
-    # Mark as selected in DB
-    mark_candidates_selected(conn, batch_date, positions)
-
-    # Generate takes
+    # Generate takes FIRST — all-or-nothing. The old order marked candidates
+    # selected before generation: one bad API window then left the picks
+    # consumed with no digest saved, which also disabled Tuesday's
+    # auto-select fallback ("manual selection found") — a silent lost week.
     selected = generate_takes(selected)
-    if not selected:
-        print("⚠️  No stories survived take generation.\n")
-        return
+    if len(selected) < picked_count:
+        _fail(
+            f"Take generation incomplete ({len(selected)}/{picked_count})",
+            f"Only {len(selected)} of {picked_count} picked stories survived take generation "
+            f"for batch {batch_date}. Nothing was saved or marked selected — fix the error above "
+            f"(likely an Anthropic API issue) and re-run the same picks.",
+        )
+
+    # Generation succeeded — now it's safe to consume the picks
+    mark_candidates_selected(conn, batch_date, positions)
 
     # Generate satirical opener (goes first!)
     satire = generate_satire(conn)
     if satire:
         selected.insert(0, satire)
 
+    # Generate the subject line ONCE and persist it — the Tuesday mass send
+    # reuses this exact subject instead of regenerating a different one.
+    subject = generate_subject_line(selected)
+
     # Save preview
     preview_path = save_preview(selected)
 
-    # Send (auto-send if --send flag, otherwise prompt)
-    if not AWS_ACCESS_KEY_ID or not AWS_SECRET_ACCESS_KEY:
-        print("📧 Email not configured — preview saved above.")
-        return
-
     # Always save to DB first
-    digest_id = save_digest_to_db(conn, selected, RECIPIENTS)
+    digest_id = save_digest_to_db(conn, selected, get_recipients(), subject=subject)
     print(f"📦 Saved to database as digest #{digest_id}")
+
+    if not AWS_ACCESS_KEY_ID or not AWS_SECRET_ACCESS_KEY:
+        print("📧 Email not configured — digest saved, no review copy sent.")
+        sys.exit(1)
 
     # Send review copy to Roy + Elizabeth only (never mass-send from --select)
     review_recipients = [r.strip() for r in os.environ.get("DIGEST_RECIPIENTS", ROY_EMAIL).split(",") if r.strip()]
-    send_email(selected, recipients=review_recipients, digest_id=str(digest_id))
+    send_email(selected, recipients=review_recipients, digest_id=str(digest_id), conn=None, subject=subject)
     print(f"\n✅ Review copy sent to {', '.join(review_recipients)}")
-    print(f"   Digest #{digest_id} is saved. Mass send happens automatically via --send-all on Tuesday 9am.\n")
+    print(f"   Digest #{digest_id} is saved. The scheduled Tuesday workflow handles the mass send.\n")
 
 
 def run_check_reply(conn):
@@ -3466,7 +3726,7 @@ def run_auto(conn):
         print("📧 Email not configured yet — preview saved above.\n")
         return
 
-    digest_id = save_digest_to_db(conn, stories, RECIPIENTS)
+    digest_id = save_digest_to_db(conn, stories, get_recipients())
     send_email(stories, digest_id=str(digest_id))
     print(f"📦 Saved to database as digest #{digest_id}")
 
@@ -3478,13 +3738,21 @@ def _run_send_all(conn, batch_limit=0, force=False):
     - Refuses to send a digest older than 7 days (prevents stale resends).
     - Prints story titles before sending so operators can verify content.
     """
-    # 1. Find latest digest with age check
+    # 1. Find latest digest. If no digest exists for the current ISO week yet
+    # (Roy didn't pick and the auto-select cron hasn't fired — cron drift can
+    # invert their order), SELF-HEAL by running auto-select inline instead of
+    # blocking and leaving the week unsent.
+    if not _current_week_digest_exists(conn):
+        print("   🔧 No digest for this ISO week yet — running auto-select inline before sending.\n")
+        run_auto_select(conn)  # exits nonzero itself if it can't produce a digest
+
     cur = conn.cursor()
     cur.execute('SELECT id, "sentAt" FROM "DigestHistory" ORDER BY "sentAt" DESC LIMIT 1')
     row = cur.fetchone()
     if not row:
-        print("❌ No digest found in database. Run --select first.")
-        return
+        _fail("No digest found for --send-all",
+              "No digest exists in the database and auto-select could not create one. "
+              "Run the Monday Preview workflow, then --select or --auto-select.")
 
     digest_id = row[0]
     digest_date = row[1]
@@ -3493,10 +3761,9 @@ def _run_send_all(conn, batch_limit=0, force=False):
     if digest_date and isinstance(digest_date, datetime):
         age_days = (datetime.now() - digest_date).days
         if age_days > 7:
-            print(f"❌ BLOCKED: Latest digest is {age_days} days old (created {digest_date.strftime('%Y-%m-%d')}).")
-            print(f"   This is a safety check to prevent sending stale content.")
-            print(f"   Run --select to create a new digest first.")
-            return
+            _fail(f"Latest digest is {age_days} days old",
+                  f"--send-all found only a stale digest (created {digest_date.strftime('%Y-%m-%d')}). "
+                  f"No newsletter was sent. Run --select to create a fresh digest.")
 
     # SAFETY: refuse if the latest digest is not from the current ISO week.
     # Why: on 2026-05-12 the send workflow fired before --select created
@@ -3508,19 +3775,16 @@ def _run_send_all(conn, batch_limit=0, force=False):
         today_year, today_week, _ = today.isocalendar()
         digest_year, digest_week, _ = digest_date.isocalendar()
         if (today_year, today_week) != (digest_year, digest_week):
-            print(f"❌ BLOCKED: Latest digest is from ISO week {digest_year}-W{digest_week:02d}, "
-                  f"but today is in {today_year}-W{today_week:02d}.")
-            print(f"   Digest sentAt: {digest_date.strftime('%Y-%m-%d %H:%M %Z')}")
-            print(f"   Likely cause: the send workflow ran before --select / --auto-select")
-            print(f"   created this week's digest. Create a fresh digest, then retry --send-all.")
-            return
+            _fail(f"Latest digest is from ISO week {digest_year}-W{digest_week:02d}, today is {today_year}-W{today_week:02d}",
+                  f"--send-all only found last week's digest (created {digest_date.strftime('%Y-%m-%d %H:%M')}) "
+                  f"and auto-select could not create this week's. No newsletter was sent.")
 
     print(f"📰 SEND ALL — Digest #{digest_id}\n")
 
     stories = load_digest_from_db(conn, digest_id)
     if not stories:
-        print(f"❌ Could not load digest #{digest_id}.")
-        return
+        _fail(f"Could not load digest #{digest_id}",
+              "The digest row exists but its stories could not be loaded. No newsletter was sent.")
 
     # SAFETY: print story titles so the operator can verify correct content
     print("   📋 Stories in this digest:")
@@ -3558,8 +3822,8 @@ def _run_send_all(conn, batch_limit=0, force=False):
         )
         all_contacts = [r[0].strip() for r in contact_cur.fetchall() if r[0] and "@" in r[0]]
     except Exception as e:
-        print(f"❌ Failed to load contacts: {e}")
-        return
+        _fail("Failed to load contacts for --send-all",
+              f"Could not load the subscriber list from Postgres: {e}\nNo newsletter was sent.")
     unsent = [e for e in all_contacts if e not in already_sent]
 
     if not unsent:
@@ -3591,7 +3855,17 @@ def _run_send_all(conn, batch_limit=0, force=False):
                          pg_digest_id=pg_digest_id, batch_num=batch_num, force=force)
     duration_seconds = time.time() - send_started_at
 
-    # Update PG status after send
+    # A None summary means a safeguard blocked the send or SES creds were
+    # missing — on the scheduled Tuesday run that means NO newsletter went
+    # out, which must be a red run + alert, not a green no-op. (The old code
+    # also marked the PG digest SENT even in this case.)
+    if summary is None:
+        _fail("Mass send was blocked before sending",
+              f"--send-all for digest #{digest_id} did not send: a safeguard blocked it "
+              f"(day-of-week / recipient threshold / missing UNSUBSCRIBE_SECRET) or SES "
+              f"credentials are missing. See the workflow log for the exact reason.")
+
+    # Update PG status after send — only when something was actually attempted
     if pg_digest_id:
         if batch_num == 1:
             pg_update_digest_status(pg_digest_id, "SENT_BATCH_1")
@@ -3599,21 +3873,25 @@ def _run_send_all(conn, batch_limit=0, force=False):
             pg_update_digest_status(pg_digest_id, "SENT_COMPLETE")
 
     # Email Roy + DIGEST_RECIPIENTS a summary so they know the send finished.
-    # Skip if send_email returned None (safeguards blocked it or AWS creds
-    # missing) — those paths already print to stdout and there's nothing to
-    # report.
-    if summary is not None:
-        _send_send_all_completion_email(
-            stories=stories,
-            digest_id=str(digest_id),
-            summary=summary,
-            total_subscribers=len(all_contacts),
-            already_sent=len(already_sent),
-            attempted=len(unsent),
-            duration_seconds=duration_seconds,
-            subject_line=summary.get("subject", "(unknown)"),
-            force=force,
-        )
+    _send_send_all_completion_email(
+        stories=stories,
+        digest_id=str(digest_id),
+        summary=summary,
+        total_subscribers=len(all_contacts),
+        already_sent=len(already_sent),
+        attempted=len(unsent),
+        duration_seconds=duration_seconds,
+        subject_line=summary.get("subject", "(unknown)"),
+        force=force,
+    )
+
+    # Send-log failure: the send was aborted mid-run to bound duplicate risk.
+    # Surface it loudly — the next run may re-send to the unlogged recipients.
+    if summary.get("log_failed"):
+        _fail("Send aborted mid-run: send-log writes failed",
+              f"Sent {summary['sent_count']} of {summary['attempted']} before aborting because "
+              f"send-log rows could not be written ({summary.get('unlogged', 0)} sent-but-unlogged). "
+              f"Check DATABASE_URL/Railway health, then re-run --send-all — it resumes from the log.")
 
 
 def run_generate(conn, pg_digest_id):
@@ -3684,8 +3962,8 @@ def run_generate(conn, pg_digest_id):
     # Save local preview too
     save_preview(stories)
 
-    # Save to DigestHistory for consistency
-    digest_id = save_digest_to_db(conn, stories, RECIPIENTS)
+    # Save to DigestHistory for consistency (persist the approved subject too)
+    digest_id = save_digest_to_db(conn, stories, get_recipients(), subject=subject)
     print(f"📦 Digest {digest_id} saved")
     print(f"✅ PG Digest {pg_digest_id} is APPROVED and ready to send!\n")
 
@@ -3700,8 +3978,8 @@ def run_analytics_report(conn):
 
     pg = _get_pg_conn()
     if not pg:
-        print("❌ Cannot connect to PostgreSQL for analytics.")
-        return
+        _fail("Analytics report could not connect to PostgreSQL",
+              "The daily analytics report was not sent.", alert=False)
 
     cur = pg.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
@@ -4264,11 +4542,14 @@ def main():
     elif args.auto:
         run_auto(conn)
     elif args.send_digest:
-        digest_id = args.send_digest
-        print(f"📨 SEND MODE — Sending saved digest #{digest_id}\n")
-        stories = load_digest_from_db(conn, digest_id)
+        # Resolve integer digest numbers to the canonical CUID FIRST — send
+        # logs and tracking URLs keyed to the raw integer never matched
+        # --send-all's dedupe (duplicate sends) or the analytics joins.
+        digest_id = resolve_digest_cuid(conn, args.send_digest)
+        print(f"📨 SEND MODE — Sending saved digest #{args.send_digest}\n")
+        stories = load_digest_from_db(conn, digest_id) if digest_id else None
         if not stories:
-            print(f"❌ Digest #{digest_id} not found in database.")
+            print(f"❌ Digest #{args.send_digest} not found in database.")
         elif not AWS_ACCESS_KEY_ID or not AWS_SECRET_ACCESS_KEY:
             print("📧 Email not configured — set AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY.\n")
         else:
@@ -4281,18 +4562,18 @@ def main():
             print(f"   Loaded {len(stories)} stories (no API calls needed)")
             send_email(stories, recipients=recipient_list, digest_id=str(digest_id), conn=conn)
     elif args.send_review:
-        digest_id = args.send_review
-        print(f"📨 REVIEW MODE — Sending digest #{digest_id} to Roy + Elizabeth only\n")
-        stories = load_digest_from_db(conn, digest_id)
+        digest_id = resolve_digest_cuid(conn, args.send_review)
+        print(f"📨 REVIEW MODE — Sending digest #{args.send_review} to Roy + Elizabeth only\n")
+        stories = load_digest_from_db(conn, digest_id) if digest_id else None
         if not stories:
-            print(f"❌ Digest #{digest_id} not found in database.")
+            print(f"❌ Digest #{args.send_review} not found in database.")
         elif not AWS_ACCESS_KEY_ID or not AWS_SECRET_ACCESS_KEY:
             print("📧 Email not configured — set AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY.\n")
         else:
             review_recipients = ["roy@surescore.com", "elizabeth@surescore.com"]
             print(f"   Sending to: {', '.join(review_recipients)}")
             print(f"   Loaded {len(stories)} stories (no API calls needed)")
-            send_email(stories, recipients=review_recipients, digest_id=str(digest_id), conn=conn)
+            send_email(stories, recipients=review_recipients, digest_id=str(digest_id))
             print(f"\n✅ Review copy sent! Once approved, run: --send-all")
     elif args.send_all:
         _run_send_all(conn, batch_limit=args.batch_limit, force=args.force)

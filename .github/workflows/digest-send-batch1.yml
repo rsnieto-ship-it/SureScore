@@ -7,12 +7,16 @@ on:
     # ensures the send still lands inside the window gate even with worst-case
     # drift.
     #
-    # 10:00 UTC Tuesday = 5:00 AM CDT / 4:00 AM CST.
-    #   With observed drift: expected actual fire 6:30–8:00 AM CT (inside gate).
+    # 12:00 UTC Tuesday = 7:00 AM CDT / 6:00 AM CST.
+    #   Passes the 6–11 CT gate even at ZERO drift year-round (the old
+    #   10:00 UTC cron was 4:00 AM CST in winter — it NEEDED ≥2h of drift
+    #   to reach the gate, i.e. the send depended on GitHub being late).
+    #   With observed drift: fires ~8:30–10:20 AM CT, inside the gate.
+    #   Runs 3h after the 09:00 UTC auto-select fallback.
     # 12:00 UTC Wednesday = 7:00 AM CDT / 6:00 AM CST.
     #   Backup in case Tuesday is missed. Wed is in SEND_ALLOWED_DAYS so the
     #   script's day guard passes; DigestSendLog idempotency prevents double-send.
-    - cron: "0 10 * * 2"
+    - cron: "0 12 * * 2"
     - cron: "0 12 * * 3"
   workflow_dispatch: # Allow manual trigger from GitHub UI
     inputs:
@@ -22,9 +26,17 @@ on:
         type: boolean
         default: false
 
+# One mass send at a time: a manual dispatch while the (drifted) scheduled
+# run is in flight used to double-send — both runs read the same "unsent"
+# snapshot before either wrote logs.
+concurrency:
+  group: digest-send
+  cancel-in-progress: false
+
 jobs:
   send-all:
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     defaults:
       run:
         working-directory: digest-script
