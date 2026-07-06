@@ -549,7 +549,7 @@ RSS_FEEDS = [
     },
     {
         "name": "Google News — Texas Universities",
-        "url": "https://news.google.com/rss/search?q=(%22UT+Austin%22+OR+%22Texas+A%26M%22+OR+%22Texas+State%22+OR+%22Texas+Tech%22)+(admissions+OR+enrollment+OR+tuition)&hl=en-US&gl=US&ceid=US:en",
+        "url": "https://news.google.com/rss/search?q=(%22UT+Austin%22+OR+%22UT+System%22+OR+%22University+of+Texas%22+OR+%22Texas+A%26M%22+OR+%22Texas+State%22+OR+%22Texas+Tech%22)+(admissions+OR+enrollment+OR+tuition)&hl=en-US&gl=US&ceid=US:en",
         "category": "TEXAS HIGHER ED",
     },
     {
