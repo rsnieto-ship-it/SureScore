@@ -4495,6 +4495,8 @@ def main():
                        help="Email a subscriber quality report (roles, districts, decision-makers)")
     group.add_argument("--unsubs", action="store_true",
                        help="Show recent unsubscribes")
+    group.add_argument("--show-digest", type=str, metavar="ID",
+                       help="Print a saved digest's takes to stdout (read-only, no sending)")
     group.add_argument("--clicks", type=str, metavar="URL_PATTERN", nargs="?", const="",
                        help="Show who clicked a URL (partial match). No arg = show all clicks.")
     parser.add_argument("--batch-limit", type=int, metavar="N", default=0,
@@ -4518,6 +4520,29 @@ def main():
         conn = init_db()
         print("📎 ADD ARTICLE MODE\n")
         add_article_to_batch(conn, args.add)
+        conn.close()
+        return
+
+    # --show-digest is read-only and needs no Claude API. Exists so a saved
+    # digest can be fact-checked before the Tuesday send without emailing it.
+    if args.show_digest:
+        conn = init_db()
+        print("🔍 SHOW DIGEST MODE\n")
+        stories = load_digest_from_db(conn, args.show_digest)
+        if not stories:
+            print(f"❌ No digest found for '{args.show_digest}'")
+        else:
+            for i, story in enumerate(stories):
+                print("=" * 70)
+                print(f"{i+1}. {story['title']}")
+                print(f"   SOURCE: {story['source']}")
+                print(f"   LINK: {story['link']}")
+                print(f"   SYNOPSIS: {story['synopsis']}")
+                for h in story["highlights"]:
+                    print(f"   HIGHLIGHT: {h}")
+                print(f"   TAKE: {story['take']}")
+                print(f"   RELEVANCE: {story['relevance']}")
+                print()
         conn.close()
         return
 
