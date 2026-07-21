@@ -4,3 +4,7 @@ feedparser>=6.0.0
 requests>=2.31.0
 psycopg2-binary>=2.9.0
 beautifulsoup4>=4.12.0
+# fetch_article_text() imports this for article extraction and silently falls
+# back to BeautifulSoup when it's absent — it was missing here, so every
+# GitHub Actions run used the weaker path.
+trafilatura>=1.12.0

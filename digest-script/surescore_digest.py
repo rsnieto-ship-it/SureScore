@@ -592,6 +592,25 @@ RSS_FEEDS = [
         "category": "TEA",
         "texas": True,
     },
+    # Direct publisher feeds. Google News feeds below are good for discovery
+    # but their article links are opaque redirect tokens that cannot be
+    # resolved, so those candidates can never have full text fetched and now
+    # run link-only (no Take). These give real publisher URLs that fetch.
+    # Verified 2026-07-21: Community Impact 2/3, Houston Public Media 3/3
+    # sample articles extracted >500 chars. Texas Standard was rejected —
+    # it rate-limits article fetches (429), so it would only yield link-only.
+    {
+        "name": "Community Impact — Texas",
+        "url": "https://communityimpact.com/rss/",
+        "category": "TEXAS K-12",
+        "texas": True,
+    },
+    {
+        "name": "Houston Public Media",
+        "url": "https://www.houstonpublicmedia.org/feed/",
+        "category": "TEXAS K-12",
+        "texas": True,
+    },
     {
         "name": "Google News — Teacher Incentive Allotment",
         "url": "https://news.google.com/rss/search?q=%22Teacher+Incentive+Allotment%22+OR+%22TIA+Texas%22+OR+(%22teacher+incentive%22+%22Texas%22)&hl=en-US&gl=US&ceid=US:en",
@@ -652,6 +671,18 @@ RSS_FEEDS = [
         "name": "Higher Ed Dive",
         "url": "https://www.highereddive.com/feeds/news/",
         "category": "HIGHER ED",
+    },
+    # Direct publisher feeds — verified 2026-07-21, both 3/3 sample articles
+    # extracted >500 chars, so candidates from these can carry a real Take.
+    {
+        "name": "The 74",
+        "url": "https://www.the74million.org/feed/",
+        "category": "K-12",
+    },
+    {
+        "name": "Chalkbeat",
+        "url": "https://www.chalkbeat.org/arc/outboundfeeds/rss/",
+        "category": "K-12",
     },
     {
         "name": "Google News — Application Deadlines & Decisions",
@@ -969,7 +1000,9 @@ When given a news headline, source, and full article text about college admissio
 
 4. RELEVANCE — A single sentence connecting this story to TSI/college readiness or what it means for Texas students and educators. Start with a concrete connection, not vague platitudes.
 
-IMPORTANT: Do NOT prefix fields with "SureScore Take:" or other labels beyond the field markers. The template handles labeling. If the headline or summary is too vague to write a meaningful response, write a general insight about the topic area.
+IMPORTANT: Do NOT prefix fields with "SureScore Take:" or other labels beyond the field markers. The template handles labeling.
+
+GROUNDING: Write only what the supplied article text supports. Do not introduce rulings, dates, figures, names, or policy details that do not appear in it, and do not fill gaps from background knowledge — this newsletter goes to counselors who act on it, so a confident wrong detail is worse than a thinner take. If the article is too thin to support a specific take, write a shorter one that stays within what it actually says.
 
 === EXAMPLE OUTPUT ===
 
@@ -1636,29 +1669,31 @@ def generate_takes(stories):
         print(f"   → Take {i+1}/{len(stories)}: {story['title'][:60]}...")
 
         article_text = prefetched[i]
-        article_fetched = bool(article_text)
-        if article_text:
-            # Truncate to ~3000 chars to stay within token limits
-            article_text = article_text[:3000]
-            print(f"      📄 Fetched article ({len(article_text)} chars)")
-        else:
-            print(f"      📄 Using RSS summary (article fetch failed)")
-            article_text = story["summary"]
 
-        # When article fetch fails, add explicit instructions to never generate filler
-        no_filler_instruction = ""
-        if not article_fetched:
-            no_filler_instruction = (
-                "\n\nIMPORTANT: You only have the headline and a brief summary to work with. "
-                "That's fine — write confidently as if you read the full article. Use your knowledge "
-                "of this topic to fill in context. NEVER say 'missing data', 'not available', "
-                "'without access to the article', 'cannot be determined', or anything that reveals "
-                "you didn't read the full piece. Your audience should never suspect the content was "
-                "generated from a headline alone. Write specific, insightful highlights and a sharp take."
-            )
+        # EDITORIAL RULE: no SureScore Take without the full article text.
+        # A Take improvised from a headline is fabrication presented as
+        # reporting, and this list acts on what it reads. On 2026-07-21 the
+        # old headline-only path produced a Texas DREAM Act take framing a
+        # settled Fifth Circuit ruling as still pending — advice that would
+        # have told counselors to wait instead of rebuilding aid plans.
+        # Stories without full text run link-only: real RSS summary, no Take.
+        if not article_text:
+            print(f"      📄 No full text — link-only, no Take generated")
+            story["synopsis"] = story.get("summary", "") or ""
+            story["highlights"] = []
+            story["bullets"] = []
+            story["take"] = ""
+            story["relevance"] = ""
+            story["link_only"] = True
+            good_stories.append(story)
+            continue
+
+        # Truncate to ~3000 chars to stay within token limits
+        article_text = article_text[:3000]
+        print(f"      📄 Fetched article ({len(article_text)} chars)")
 
         try:
-            def _make_take_request(text=article_text, no_filler=no_filler_instruction):
+            def _make_take_request(text=article_text):
                 return client.messages.create(
                     model="claude-sonnet-5",
                     thinking={"type": "disabled"},
@@ -1678,7 +1713,6 @@ def generate_takes(stories):
                             f"- LABEL: [label] | TEXT: [description]\n"
                             f"TAKE: [1-2 sentence editorial take]\n"
                             f"RELEVANCE: [1 sentence connecting to TSI/college readiness]"
-                            f"{no_filler}"
                         )
                     }]
                 )
@@ -1691,7 +1725,7 @@ def generate_takes(stories):
             if _is_refusal_take(all_generated_text):
                 print(f"      🔄 Filler detected — retrying with stronger prompt...")
 
-                def _make_retry_request():
+                def _make_retry_request(text=article_text):
                     return client.messages.create(
                         model="claude-sonnet-5",
                         thinking={"type": "disabled"},
@@ -1702,11 +1736,12 @@ def generate_takes(stories):
                             "content": (
                                 f"Headline: {story['title']}\n"
                                 f"Source: {story['source']}\n\n"
-                                f"Summary: {story['summary']}\n\n"
-                                f"Write your analysis based on the headline and your knowledge of this topic. "
-                                f"Be confident and specific — use real data points, trends, and context you know about this subject. "
-                                f"DO NOT use placeholder language, DO NOT say data is missing or unavailable. "
-                                f"Write as if you are an expert who read this article and is now briefing school counselors.\n\n"
+                                f"Full article:\n{text}\n\n"
+                                f"Your previous response hedged instead of committing to an analysis. "
+                                f"You have the full article above — write the analysis from what it actually says. "
+                                f"Be specific and cite details, figures, and names that appear in the article. "
+                                f"Do not add facts the article does not contain, and do not pad with general "
+                                f"background to fill space. Brief school counselors on what this piece reports.\n\n"
                                 f"SYNOPSIS: [2-sentence neutral summary]\n"
                                 f"HIGHLIGHTS:\n"
                                 f"- LABEL: [label] | TEXT: [specific insight]\n"
@@ -2611,6 +2646,30 @@ def build_email_html(stories, unsubscribe_url=None, tracking_pixel_url=None, cli
                     <td style="padding: 0 0 0 4px;">{bullet_items}</td>
                 </tr></table>"""
 
+            # SureScore Take (hidden if empty). Stories whose full text could
+            # not be fetched run link-only: an honest RSS synopsis and no Take,
+            # rather than a Take improvised from the headline.
+            take_text = story.get('take', '')
+            take_html = ''
+            if take_text:
+                take_html = f"""
+            <!-- Separator: info -> opinion -->
+            <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-top: 18px;"><tr>
+                <td style="border-top: 1px solid #f0f0f0; padding: 0; line-height: 0; font-size: 0;">&nbsp;</td>
+            </tr></table>
+
+            <!-- SureScore Take (compact amber box) -->
+            <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-top: 14px;"><tr>
+                <td style="border-left: 3px solid #d97706; padding: 12px 16px; background-color: #fffbf5;">
+                    <p style="font-family: 'Courier New', monospace; font-size: 10px; font-weight: 700; letter-spacing: 1.5px; color: #d97706; margin: 0 0 6px 0;">
+                        &#9733; SURESCORE TAKE
+                    </p>
+                    <p style="font-family: Georgia, serif; font-size: 14px; font-style: italic; line-height: 1.6; color: #333; margin: 0;">
+                        {take_text}
+                    </p>
+                </td>
+            </tr></table>"""
+
             # Relevance bar (hidden if empty)
             relevance_text = story.get('relevance', '')
             relevance_html = ''
@@ -2666,22 +2725,8 @@ def build_email_html(stories, unsubscribe_url=None, tracking_pixel_url=None, cli
             <!-- 5. KEY HIGHLIGHTS -->
             {highlights_html}
 
-            <!-- Separator: info → opinion -->
-            <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-top: 18px;"><tr>
-                <td style="border-top: 1px solid #f0f0f0; padding: 0; line-height: 0; font-size: 0;">&nbsp;</td>
-            </tr></table>
-
-            <!-- 6. SureScore Take (compact amber box) -->
-            <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-top: 14px;"><tr>
-                <td style="border-left: 3px solid #d97706; padding: 12px 16px; background-color: #fffbf5;">
-                    <p style="font-family: 'Courier New', monospace; font-size: 10px; font-weight: 700; letter-spacing: 1.5px; color: #d97706; margin: 0 0 6px 0;">
-                        &#9733; SURESCORE TAKE
-                    </p>
-                    <p style="font-family: Georgia, serif; font-size: 14px; font-style: italic; line-height: 1.6; color: #333; margin: 0;">
-                        {story['take']}
-                    </p>
-                </td>
-            </tr></table>
+            <!-- 6. SureScore Take (omitted when full text was unavailable) -->
+            {take_html}
 
             <!-- 7. Relevance bar -->
             {relevance_html}
@@ -2969,9 +3014,10 @@ def build_plaintext(stories):
                 lines.append(f"  • {b}")
             lines.append("")
 
-        # TAKE
-        lines.append(f"★ SURESCORE TAKE: {story['take']}")
-        lines.append("")
+        # TAKE (omitted when full text was unavailable — see generate_takes)
+        if story.get('take'):
+            lines.append(f"★ SURESCORE TAKE: {story['take']}")
+            lines.append("")
 
         # WHY IT MATTERS
         relevance = story.get('relevance', '')
