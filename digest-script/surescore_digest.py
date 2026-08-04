@@ -593,9 +593,11 @@ RSS_FEEDS = [
         "texas": True,
     },
     # Direct publisher feeds. Google News feeds below are good for discovery
-    # but their article links are opaque redirect tokens that cannot be
-    # resolved, so those candidates can never have full text fetched and now
-    # run link-only (no Take). These give real publisher URLs that fetch.
+    # but their article links are opaque redirect tokens. As of 2026-08-04
+    # resolve_google_news_url() exchanges those tokens for the real publisher
+    # URL via the batchexecute RPC, so they DO yield full text and Takes now
+    # (before that fix they silently ran link-only). These direct feeds are
+    # still preferred: no resolve step, no dependency on a private Google RPC.
     # Verified 2026-07-21: Community Impact 2/3, Houston Public Media 3/3
     # sample articles extracted >500 chars. Texas Standard was rejected —
     # it rate-limits article fetches (429), so it would only yield link-only.
@@ -1428,19 +1430,70 @@ def score_candidate_relevance(stories, threshold=None):
 # STEP 2: GENERATE SURESCORE TAKES
 # ============================================================
 
+_UA = ("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
+       "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+
+
+def resolve_google_news_url(url, timeout=15):
+    """Resolve a Google News RSS redirect token to the real publisher URL.
+
+    Google News /rss/articles/ links are opaque tokens, not HTTP redirects --
+    plain requests.get() lands on a JS shell with no article text, which is why
+    every Google News candidate used to run link-only (no Take). The token can
+    be exchanged for the publisher URL via the DotsSplashUi batchexecute RPC,
+    which needs a signature + timestamp embedded in the article page itself.
+
+    Returns the resolved URL, or the original URL if resolution fails (callers
+    then degrade to the previous link-only behavior rather than breaking).
+    """
+    if not url or "news.google.com" not in url or "/articles/" not in url:
+        return url
+    try:
+        session = requests.Session()
+        session.headers["User-Agent"] = _UA
+        html = session.get(url, timeout=timeout).text
+        sig = re.search(r'data-n-a-sg="([^"]+)"', html)
+        ts = re.search(r'data-n-a-ts="([^"]+)"', html)
+        if not (sig and ts):
+            print(f"      ⚠️  Google News resolve: no signature on page")
+            return url
+        token = url.split("/articles/")[1].split("?")[0]
+        payload = json.dumps([[["Fbv4je", json.dumps([
+            "garturlreq",
+            [["X", "X", ["X", "X"], None, None, 1, 1, "US:en", None, 1,
+              None, None, None, None, None, 0, 1],
+             "X", "X", 1, [1, 1, 1], 1, 1, None, 0, 0, None, 0],
+            token, int(ts.group(1)), sig.group(1)]), None, "generic"]]])
+        resp = session.post(
+            "https://news.google.com/_/DotsSplashUi/data/batchexecute",
+            data={"f.req": payload},
+            headers={"Content-Type": "application/x-www-form-urlencoded;charset=UTF-8"},
+            timeout=timeout,
+        )
+        match = re.search(r'https?://(?!news\.google)[^\\"\s]+', resp.text)
+        if not match:
+            print(f"      ⚠️  Google News resolve: RPC returned no URL")
+            return url
+        return match.group(0)
+    except Exception as e:
+        print(f"      ⚠️  Google News resolve failed: {e}")
+        return url
+
+
 def fetch_article_text(url, timeout=10):
     """Fetch the full article text from a URL.
 
     Uses trafilatura for extraction, with a BeautifulSoup fallback.
-    Follows Google News redirects to reach the actual article.
+    Resolves Google News redirect tokens first so those articles yield real
+    text instead of running link-only.
     Returns the extracted text, or None if the fetch fails.
     """
     if not url:
         return None
+    url = resolve_google_news_url(url)
     try:
-        resp = requests.get(url, timeout=timeout, allow_redirects=True, headers={
-            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-        })
+        resp = requests.get(url, timeout=timeout, allow_redirects=True,
+                            headers={"User-Agent": _UA})
         resp.raise_for_status()
         html = resp.text
     except Exception as e:
