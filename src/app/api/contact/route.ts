@@ -23,7 +23,17 @@ export async function POST(request: Request) {
       );
     }
 
-    const data = parsed.data;
+    // Role, interest, and message are optional. An untouched select or
+    // textarea posts "", so collapse blanks to undefined — JSON.stringify then
+    // drops the key entirely and FormSubmission.data never carries an empty
+    // string. Arka's website_lead_monitor reads these with .get() defaults, so
+    // an absent key renders as "n/a" rather than a blank line.
+    const data = {
+      ...parsed.data,
+      role: parsed.data.role?.trim() || undefined,
+      interest: parsed.data.interest?.trim() || undefined,
+      message: parsed.data.message?.trim() || undefined,
+    };
 
     // Save form submission
     const submission = await prisma.formSubmission.create({
@@ -65,10 +75,18 @@ export async function POST(request: Request) {
          <p><strong>Email:</strong> ${data.email}</p>
          <p><strong>Phone:</strong> ${data.phone || "N/A"}</p>
          <p><strong>District:</strong> ${data.district}</p>
-         <p><strong>Role:</strong> ${data.role}</p>
-         <p><strong>Interest:</strong> ${INTEREST_LABELS[data.interest] || data.interest}</p>
-         <p><strong>Message:</strong></p>
+         <p><strong>Role:</strong> ${data.role || "Not provided"}</p>
+         <p><strong>Interest:</strong> ${
+           data.interest
+             ? INTEREST_LABELS[data.interest] || data.interest
+             : "Not provided"
+         }</p>
+         ${
+           data.message
+             ? `<p><strong>Message:</strong></p>
          <p>${data.message}</p>`
+             : ""
+         }`
       );
       await prisma.formSubmission.update({
         where: { id: submission.id },

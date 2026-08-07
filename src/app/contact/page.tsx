@@ -188,6 +188,7 @@ export default function ContactPage() {
                               <input
                                 {...register("name")}
                                 type="text"
+                                required
                                 className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[var(--primary-500)] focus:border-transparent transition-all"
                                 placeholder="Dr. Jane Smith"
                               />
@@ -204,6 +205,7 @@ export default function ContactPage() {
                               <input
                                 {...register("email")}
                                 type="email"
+                                required
                                 className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[var(--primary-500)] focus:border-transparent transition-all"
                                 placeholder="jsmith@district.edu"
                               />
@@ -234,6 +236,7 @@ export default function ContactPage() {
                               <input
                                 {...register("district")}
                                 type="text"
+                                required
                                 className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[var(--primary-500)] focus:border-transparent transition-all"
                                 placeholder="Austin ISD"
                               />
@@ -248,7 +251,7 @@ export default function ContactPage() {
                           <div className="grid md:grid-cols-2 gap-6">
                             <div>
                               <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Your Role *
+                                Your Role
                               </label>
                               <select
                                 {...register("role")}
@@ -263,15 +266,10 @@ export default function ContactPage() {
                                 <option value="teacher">Teacher</option>
                                 <option value="other">Other</option>
                               </select>
-                              {errors.role && (
-                                <p className="mt-1 text-sm text-red-500">
-                                  {errors.role.message}
-                                </p>
-                              )}
                             </div>
                             <div>
                               <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Primary Interest *
+                                Primary Interest
                               </label>
                               <select
                                 {...register("interest")}
@@ -284,29 +282,19 @@ export default function ContactPage() {
                                 <option value="strategy-of-the-day">Strategy of the Day</option>
                                 <option value="general">General Information</option>
                               </select>
-                              {errors.interest && (
-                                <p className="mt-1 text-sm text-red-500">
-                                  {errors.interest.message}
-                                </p>
-                              )}
                             </div>
                           </div>
 
                           <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">
-                              Tell Us About Your District&apos;s Needs *
+                              Anything we should know before we reach out?
                             </label>
                             <textarea
                               {...register("message")}
                               rows={5}
                               className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[var(--primary-500)] focus:border-transparent transition-all resize-none"
-                              placeholder="Share your district's CCMR goals, current challenges, and what you're hoping to achieve..."
+                              placeholder="Optional — a sentence or two is plenty."
                             />
-                            {errors.message && (
-                              <p className="mt-1 text-sm text-red-500">
-                                {errors.message.message}
-                              </p>
-                            )}
                           </div>
 
                           {submitError && (

@@ -39,9 +39,9 @@ export default function TeacherTrainingPage() {
                       Schedule Training
                     </Button>
                   </Link>
-                  <Link href="/resources">
+                  <Link href="/contact">
                     <Button size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-[var(--primary-600)]">
-                      View Resources
+                      Ask About Training Materials
                     </Button>
                   </Link>
                 </div>

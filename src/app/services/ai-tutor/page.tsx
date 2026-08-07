@@ -130,7 +130,7 @@ export default function AITutorPage() {
                     { value: "24/7", label: "Always-On Tutoring" },
                     { value: "100%", label: "Personalized Content" },
                     { value: "TSIA2", label: "Math & ELAR Aligned" },
-                    { value: "0", label: "Teacher Burden Increase" },
+                    { value: "0", label: "Extra Hours for Teachers" },
                   ].map((stat, index) => (
                     <div
                       key={stat.label}

@@ -8,6 +8,23 @@ import { Header, Footer } from "@/components/layout";
 import { Container, Card, CardContent, Button } from "@/components/ui";
 import { sotdTrialSchema, type SotdTrialFormData } from "@/lib/schemas";
 
+// How far out a district may schedule the start of its trial.
+const TRIAL_WINDOW_DAYS = 90;
+
+/**
+ * A YYYY-MM-DD date, offset by whole days, always read in Central time.
+ *
+ * Pinning the time zone keeps the server render and the client hydration in
+ * agreement — the server runs in UTC, so an unpinned `new Date()` produces
+ * tomorrow's date every evening after 6 PM Central.
+ */
+function centralDate(offsetDays = 0): string {
+  const day = new Date(Date.now() + offsetDays * 24 * 60 * 60 * 1000);
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Chicago",
+  }).format(day);
+}
+
 export default function SotdTrialPage() {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -94,7 +111,7 @@ export default function SotdTrialPage() {
                       <div>
                         <h3 className="font-semibold text-gray-900 mb-1">3 Weeks, No Commitment</h3>
                         <p className="text-gray-600 text-sm">
-                          Try it free for 3 weeks in May with up to 2 teachers. No contracts, no credit card.
+                          Try it free for 3 weeks with up to 2 teachers. No contracts, no credit card.
                         </p>
                       </div>
                     </CardContent>
@@ -210,13 +227,13 @@ export default function SotdTrialPage() {
                             </div>
                             <div>
                               <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Preferred Start Date in May *
+                                Preferred Start Date *
                               </label>
                               <input
                                 {...register("startDate")}
                                 type="date"
-                                min="2026-05-01"
-                                max="2026-05-31"
+                                min={centralDate()}
+                                max={centralDate(TRIAL_WINDOW_DAYS)}
                                 className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[var(--primary-500)] focus:border-transparent transition-all"
                               />
                               {errors.startDate && (

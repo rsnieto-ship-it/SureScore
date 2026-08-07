@@ -5,9 +5,11 @@ export const contactSchema = z.object({
   email: z.string().email("Please enter a valid email"),
   phone: z.string().optional(),
   district: z.string().min(2, "Please enter your district name"),
-  role: z.string().min(1, "Please select your role"),
-  interest: z.string().min(1, "Please select your primary interest"),
-  message: z.string().min(10, "Message must be at least 10 characters"),
+  // Optional — we can ask for any of these on the follow-up call. Requiring
+  // them, especially the free-text message, cost us submissions.
+  role: z.string().optional(),
+  interest: z.string().optional(),
+  message: z.string().optional(),
 });
 
 export type ContactFormData = z.infer<typeof contactSchema>;
