@@ -39,9 +39,9 @@ export default function CustomizableCurriculumPage() {
                       Request Curriculum Review
                     </Button>
                   </Link>
-                  <Link href="/resources">
+                  <Link href="/contact">
                     <Button size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-[var(--primary-600)]">
-                      View Sample Materials
+                      Ask for Sample Materials
                     </Button>
                   </Link>
                 </div>
